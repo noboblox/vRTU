@@ -6,79 +6,60 @@ namespace SCL
 {
 
   EnumType::EnumType(const std::string& arName)
-   : mId(arName),
-     mValues() {}
+   : mTypeId(arName),
+     mUniqueValues(),
+     mUniqueNames() {}
 
   EnumType::~EnumType() {}
 
   void
   EnumType::Insert(ValueType aValue, const std::string& arValueName)
   {
-    auto it_check = mValues.begin();
-    auto it_end = mValues.end();
-    auto it_insert = it_end;
+    const auto it_name = mUniqueNames.find(arValueName);
+    const auto it_value = mUniqueName.find(aValue);
 
-    for (; it_check != it_end; ++it_check)
+    if ((it_name != mUniqueNames.cend()) ||
+        (it_value != mUniqueValues.cend()))
     {
-      if (it_check->first >= aValue)
-      {
-        it_insert = it_check;
-      }
-
-      if ((it_check->first == aValue) || (it_check->second == arValueName))
-      {
-        throw std::invalid_argument("The element for insertion is not unique inside the enum type.");
-      }
+      throw std::invalid_argument("The given definition contains already registered elements.");
     }
 
-    mValues.insert(it_insert, std::make_pair(aValue, arValueName));
+    mUniqueNames.insert(std::make_pair(arValueName, aValue));
+    mUniqueValues.insert(std::make_pair(aValue, arValueNames));
   }
 
   bool
   EnumType::IsValid(ValueType aValue) const
   {
-    for (const auto& i : mValues)
-    {
-      if (i.first == aValue)
-      {
-        return true;
-      }
-    }
-    return false;
+    return (mUniqueValues.find(aValue) != mUniqueValues.cend());
   }
 
   const std::string&
-  EnumType::ToName(ValueType aValue) const
+  EnumType::ValueToName(ValueType aValue) const
   {
-    for (const auto& i: mValues)
+    const auto it = mUniqueValues.find(aValue);
+    if (it == mUniqueValues.cend())
     {
-      if (i.first == aValue)
-      {
-        return i.second;
-      }
+      throw std::out_of_range("Invalid value for enum type.");
     }
-
-    throw std::out_of_range("Invalid value for enum type.");
+    return it->second;
   }
 
   EnumType::ValueType
-  EnumType::ToValue(const std::string& arValueName) const
+  EnumType::NameToValue(const std::string& arValueName) const
   {
-    for (const auto& i: mValues)
+    const auto it = mUniqueNames.find(arValueName);
+    if (it == mUniqueNames.cend())
     {
-      if (i.second == arValueName)
-      {
-        return i.first;
-      }
+      throw std::out_of_range("Invalid value name.");
     }
-
-    throw std::out_of_range("Invalid value name.");
+    return it->second;
   }
 
   const std::string&
   EnumType::GetTypeName() const
   {
-    return mId;
+    return mTypeId;
   }
 
   EnumValue::EnumValue(const std::string& arValue, const EnumType& arEnumType)
