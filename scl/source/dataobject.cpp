@@ -9,13 +9,13 @@ namespace SCL
 	}
 
 	void
-		DataObjectType::Insert(const SubDataObject& arSDO)
+	DataObjectType::Insert(const SubDataObject& arSDO)
 	{
 		mSDOs.push_back(arSDO);
 	}
 
 	void
-		DataObjectType::Insert(const DataAttribute& arDA)
+	DataObjectType::Insert(const DataAttribute& arDA)
 	{
 		mDAs.push_back(arDA);
 	}
