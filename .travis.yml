@@ -1,17 +1,25 @@
 
 language: cpp
-os: linux
-  dist:
-    - bionic
-    - xenial
+
+matrix:
+  include:
+    - os: linux
+        dist: bionic
+        compiler: gcc
+    - os: linux
+        dist: bionic
+        compiler: clang
+    - os: linux
+        dist: xenial
+        compiler: gcc
+    - os: linux
+        dist: xenial
+        compiler: clang
+
+script: cmake . && make
+
 addons:
   apt:
     packages:
     - libboost-system-dev
     - libboost-test-dev
-
-compiler:
-  - clang
-  - gcc
-
-script: cmake . && make
