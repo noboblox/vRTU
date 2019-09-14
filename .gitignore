@@ -362,3 +362,4 @@ MigrationBackup/
 *.filters
 *.vcxproj
 Testing/Temporary/CTestCostData.txt
+*.prefs

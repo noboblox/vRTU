@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+#include "enums.hpp"
+
 namespace SCL
 {
   class EnumType;
@@ -106,38 +108,10 @@ namespace SCL
 		  dupd_qchg_dchg = 0x7
 	  };
 
-	  enum FunctionalConstraint
-	  {
-		ST,
-		MX,
-		CO,
-		SP,
-		SG,
-		SE,
-		SV,
-		CF,
-		DC,
-		EX,
-		SR,
-		BL,
-		OR
-	  };
-
   public:
-	  explicit DataAttribute(const std::string& arName, const EnumType& arEnum, FunctionalConstraint aFc, Trigger aTrigger)
-		  : DataAttributeBase(arName, arEnum),
-		  mFC(aFc),
-		  mTriggerFlags(static_cast<int>(aTrigger)) {}
-
-	  explicit DataAttribute(const std::string& arName, const DataAttributeType& arStruct, FunctionalConstraint aFc, Trigger aTrigger)
-		  : DataAttributeBase(arName, arStruct),
-		  mFC(aFc),
-		  mTriggerFlags(static_cast<int>(aTrigger)) {}
-
-	  explicit DataAttribute(const std::string& arName, DataAttributeBase::BasicType aBasicType, FunctionalConstraint aFc, Trigger aTrigger)
-		  : DataAttributeBase(arName, aBasicType),
-		  mFC(aFc),
-		  mTriggerFlags(static_cast<int>(aTrigger)) {}
+	  explicit DataAttribute(const std::string& arName, const EnumType& arEnum, FunctionalConstraint aFc, Trigger aTrigger);
+	  explicit DataAttribute(const std::string& arName, const DataAttributeType& arStruct, FunctionalConstraint aFc, Trigger aTrigger);
+	  explicit DataAttribute(const std::string& arName, DataAttributeBase::BasicType aBasicType, FunctionalConstraint aFc, Trigger aTrigger);
 
 	  virtual ~DataAttribute() {}
 
@@ -154,6 +128,7 @@ namespace SCL
 	  DataAttribute& operator=(DataAttribute&&) = default;
 
   private:
+	  void CheckInit() const;
 	  FunctionalConstraint mFC;
 	  int mTriggerFlags;
   };

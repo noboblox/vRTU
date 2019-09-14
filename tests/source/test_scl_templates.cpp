@@ -6,6 +6,8 @@
 #include "enumtype.hpp"
 #include "dataattribute.hpp"
 #include "dataobject.hpp"
+#include "objectreference.hpp"
+#include "enums.hpp"
 
 BOOST_AUTO_TEST_CASE(test_enumtype)
 {
@@ -43,14 +45,14 @@ BOOST_AUTO_TEST_CASE(test_data_attribute)
 	scl_vector.Insert(mag);
 	scl_vector.Insert(ang);
 
-	SCL::DataAttribute cVal("cVal", scl_vector, SCL::DataAttribute::MX, SCL::DataAttribute::dchg); // constructed DA
-	SCL::DataAttribute t("t", SCL::BasicDataAttribute::Timestamp, SCL::DataAttribute::MX, SCL::DataAttribute::no_triggers); // basic DA
+	SCL::DataAttribute cVal("cVal", scl_vector,SCL::FunctionalConstraint::MX, SCL::DataAttribute::dchg); // constructed DA
+	SCL::DataAttribute t("t", SCL::BasicDataAttribute::Timestamp,SCL::FunctionalConstraint::MX, SCL::DataAttribute::no_triggers); // basic DA
 
 
 	SCL::EnumType originEnum("orCategory");
 
 	SCL::BasicDataAttribute orCat("orCat", originEnum); // enum BDA
-	SCL::DataAttribute enum_da("DA_ENUM", originEnum, SCL::DataAttribute::CF, SCL::DataAttribute::dupd_qchg); // fictional enum DA
+	SCL::DataAttribute enum_da("DA_ENUM", originEnum,SCL::FunctionalConstraint::CF, SCL::DataAttribute::dupd_qchg); // fictional enum DA
 
 
 	BOOST_REQUIRE_EQUAL(enum_da.HasTriggerOnDataChange(), false);
@@ -86,9 +88,9 @@ BOOST_AUTO_TEST_CASE(test_data_object)
 	scl_vector.Insert(mag);
 	scl_vector.Insert(ang);
 
-	SCL::DataAttribute cVal("cVal", scl_vector, SCL::DataAttribute::MX, SCL::DataAttribute::dchg); // constructed DA
-	SCL::DataAttribute t("t", SCL::DataAttribute::Timestamp, SCL::DataAttribute::MX, SCL::DataAttribute::no_triggers); // basic DA
-	SCL::DataAttribute q("q", SCL::DataAttribute::Quality, SCL::DataAttribute::MX, SCL::DataAttribute::qchg); // basic DA
+	SCL::DataAttribute cVal("cVal", scl_vector,SCL::FunctionalConstraint::MX, SCL::DataAttribute::dchg); // constructed DA
+	SCL::DataAttribute t("t", SCL::DataAttribute::Timestamp,SCL::FunctionalConstraint::MX, SCL::DataAttribute::no_triggers); // basic DA
+	SCL::DataAttribute q("q", SCL::DataAttribute::Quality,SCL::FunctionalConstraint::MX, SCL::DataAttribute::qchg); // basic DA
 
 	// Test DOs
 	SCL::DataObjectType cmv("CMV_1", SCL::DataObjectType::CMV); // DOType
@@ -104,9 +106,32 @@ BOOST_AUTO_TEST_CASE(test_data_object)
 	wye.Insert(phsA); // insert SDO
 	wye.Insert(phsB); // insert SDO
 	wye.Insert(phsC); // insert SDO
+}
 
+BOOST_AUTO_TEST_CASE(object_reference)
+{
+	SCL::ObjectReference ref1("QA1CSWI1.Pos.stVal"); // 3 layers
+	SCL::ObjectReference ref2("QA1CSWI1$Pos$stVal", SCL::FunctionalConstraint::undefined, '$'); // 3 layers alternative seperator
+	SCL::ObjectReference ref3("Q02MMXU1.A.phsA.cVal.mag.f"); // 6 layers no fc
+	SCL::ObjectReference ref4("Q02MMXU1.A.phsA.cVal.mag.f", SCL::FunctionalConstraint::MX); // 6 layers fc=MX
 
+	BOOST_REQUIRE_EQUAL(ref1.GetLayer(), 3);
+	BOOST_REQUIRE_EQUAL(ref2.GetLayer(), 3);
+	BOOST_REQUIRE_EQUAL(ref3.GetLayer(), 6);
+	BOOST_REQUIRE_EQUAL(ref4.GetLayer(), 6);
 
-	// Data objects
-
+	BOOST_REQUIRE_EQUAL(ref1.GetElementName(1), "QA1CSWI1");
+	BOOST_REQUIRE_EQUAL(ref1.GetElementName(2), "Pos");
+	BOOST_REQUIRE_EQUAL(ref1.GetElementName(3), "stVal");
+	
+	BOOST_REQUIRE_EQUAL(ref2.GetElementName(1), "QA1CSWI1");
+	BOOST_REQUIRE_EQUAL(ref2.GetElementName(2), "Pos");
+	BOOST_REQUIRE_EQUAL(ref2.GetElementName(3), "stVal");
+	
+	BOOST_REQUIRE_EQUAL(ref3.GetElementName(1), "Q02MMXU1");
+	BOOST_REQUIRE_EQUAL(ref3.GetElementName(2), "A");
+	BOOST_REQUIRE_EQUAL(ref3.GetElementName(3), "phsA");
+	BOOST_REQUIRE_EQUAL(ref3.GetElementName(4), "cVal");
+	BOOST_REQUIRE_EQUAL(ref3.GetElementName(5), "mag");
+	BOOST_REQUIRE_EQUAL(ref3.GetElementName(6), "f");
 }
