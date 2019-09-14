@@ -1,0 +1,17 @@
+
+language: cpp
+os: linux
+  dist:
+    - bionic
+    - xenial
+addons:
+  apt:
+    packages:
+    - libboost-system-dev
+    - libboost-test-dev
+
+compiler:
+  - clang
+  - gcc
+
+script: cmake . && make
