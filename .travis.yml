@@ -15,7 +15,7 @@ matrix:
       dist: xenial
       compiler: clang
 
-script: cmake . && make && ./scl_tests
+script: cmake . && make && make test
 
 addons:
   apt:
