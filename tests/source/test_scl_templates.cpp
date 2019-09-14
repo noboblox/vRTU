@@ -29,5 +29,5 @@ BOOST_AUTO_TEST_CASE(test_enumtype)
   BOOST_REQUIRE_THROW(enumtype.NameToValue("Closed"), std::out_of_range); // error
   
   BOOST_REQUIRE_EQUAL(enumtype.ValueToName(3), "faulty");
-  BOOST_REQUIRE_THROW(enumtype.ValueToName(4), std::out_of_range); // error
+  BOOST_REQUIRE_THROW(enumtype.ValueToName(5), std::out_of_range); // error
 }
