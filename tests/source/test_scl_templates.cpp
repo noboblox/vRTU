@@ -72,4 +72,41 @@ BOOST_AUTO_TEST_CASE(test_data_attribute)
 
 BOOST_AUTO_TEST_CASE(test_data_object)
 {
+	// Preconditions
+	SCL::BasicDataAttribute f_bda("f", SCL::BasicDataAttribute::FLOAT32); // basic BDA
+	SCL::BasicDataAttribute i_bda("i", SCL::BasicDataAttribute::INT32); // basic BDA
+
+	SCL::DataAttributeType analogue_val("analogue_value1"); // DAType
+	analogue_val.Insert(f_bda);
+	analogue_val.Insert(i_bda);
+
+	SCL::BasicDataAttribute mag("mag", analogue_val); // constructed BDA
+	SCL::BasicDataAttribute ang("ang", analogue_val); // constructed BDA
+	SCL::DataAttributeType scl_vector("vector1"); // DAType
+	scl_vector.Insert(mag);
+	scl_vector.Insert(ang);
+
+	SCL::DataAttribute cVal("cVal", scl_vector, SCL::DataAttribute::MX, SCL::DataAttribute::dchg); // constructed DA
+	SCL::DataAttribute t("t", SCL::DataAttribute::Timestamp, SCL::DataAttribute::MX, SCL::DataAttribute::no_triggers); // basic DA
+	SCL::DataAttribute q("q", SCL::DataAttribute::Quality, SCL::DataAttribute::MX, SCL::DataAttribute::qchg); // basic DA
+
+	// Test DOs
+	SCL::DataObjectType cmv("CMV_1", SCL::DataObjectType::CMV); // DOType
+	cmv.Insert(cVal); // insert DA
+	cmv.Insert(t); // insert DA
+	cmv.Insert(q); // insert DA
+
+	SCL::SubDataObject phsA("phsA", cmv); // SDO
+	SCL::SubDataObject phsB("phsB", cmv); // SDO
+	SCL::SubDataObject phsC("phsC", cmv); // SDO
+
+	SCL::DataObjectType wye("WYE_1", SCL::DataObjectType::WYE); // DOType
+	wye.Insert(phsA); // insert SDO
+	wye.Insert(phsB); // insert SDO
+	wye.Insert(phsC); // insert SDO
+
+
+
+	// Data objects
+
 }
