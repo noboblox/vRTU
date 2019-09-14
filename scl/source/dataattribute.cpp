@@ -7,5 +7,9 @@ namespace SCL
 	{
 		mBDAs.push_back(arSubData);
 	}
+
+	DataAttributeBase::~DataAttributeBase()
+	{
+	};
 }
 
