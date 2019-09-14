@@ -5,6 +5,7 @@
 
 #include "enumtype.hpp"
 #include "dataattribute.hpp"
+#include "dataobject.hpp"
 
 BOOST_AUTO_TEST_CASE(test_enumtype)
 {
@@ -29,19 +30,46 @@ BOOST_AUTO_TEST_CASE(test_enumtype)
 
 BOOST_AUTO_TEST_CASE(test_data_attribute)
 {
-	SCL::BasicDataAttribute f_bda("f", SCL::BasicDataAttribute::FLOAT32); // Basic type
-	SCL::BasicDataAttribute i_bda("i", SCL::BasicDataAttribute::INT32);
-	
-	SCL::DataAttributeType analogue_val("analogue_value1");
-	analogue_val.Insert(f_bda);
-    analogue_val.Insert(i_bda);
+	SCL::BasicDataAttribute f_bda("f", SCL::BasicDataAttribute::FLOAT32); // basic BDA
+	SCL::BasicDataAttribute i_bda("i", SCL::BasicDataAttribute::INT32); // basic BDA
 
-	SCL::BasicDataAttribute mag("mag", analogue_val);
-	SCL::BasicDataAttribute ang("ang", analogue_val);
-	SCL::DataAttributeType scl_vector("vector1");
+	SCL::DataAttributeType analogue_val("analogue_value1"); // DAType
+	analogue_val.Insert(f_bda);
+	analogue_val.Insert(i_bda);
+
+	SCL::BasicDataAttribute mag("mag", analogue_val); // constructed BDA
+	SCL::BasicDataAttribute ang("ang", analogue_val); // constructed BDA
+	SCL::DataAttributeType scl_vector("vector1"); // DAType
 	scl_vector.Insert(mag);
 	scl_vector.Insert(ang);
 
-	SCL::DataAttribute cVal("cVal", scl_vector, SCL::DataAttribute::MX, SCL::DataAttribute::dchg);
-	SCL::DataAttribute t("t", SCL::BasicDataAttribute::Timestamp, SCL::DataAttribute::MX, SCL::DataAttribute::no_triggers);
+	SCL::DataAttribute cVal("cVal", scl_vector, SCL::DataAttribute::MX, SCL::DataAttribute::dchg); // constructed DA
+	SCL::DataAttribute t("t", SCL::BasicDataAttribute::Timestamp, SCL::DataAttribute::MX, SCL::DataAttribute::no_triggers); // basic DA
+
+
+	SCL::EnumType originEnum("orCategory");
+
+	SCL::BasicDataAttribute orCat("orCat", originEnum); // enum BDA
+	SCL::DataAttribute enum_da("DA_ENUM", originEnum, SCL::DataAttribute::CF, SCL::DataAttribute::dupd_qchg); // fictional enum DA
+
+
+	BOOST_REQUIRE_EQUAL(enum_da.HasTriggerOnDataChange(), false);
+	BOOST_REQUIRE_EQUAL(enum_da.HasTriggerOnDataUpdate(), true);
+	BOOST_REQUIRE_EQUAL(enum_da.HasTriggerOnQualityChange(), true);
+	
+	BOOST_REQUIRE_EQUAL(t.HasTriggerOnDataChange(), false);
+	BOOST_REQUIRE_EQUAL(t.HasTriggerOnDataUpdate(), false);
+	BOOST_REQUIRE_EQUAL(t.HasTriggerOnQualityChange(), false);
+
+	BOOST_REQUIRE_EQUAL(f_bda.IsBasicType(), true);
+	BOOST_REQUIRE_EQUAL(f_bda.IsEnum(), false);
+	BOOST_REQUIRE_EQUAL(f_bda.IsStruct(), false);
+		
+	BOOST_REQUIRE_EQUAL(cVal.IsBasicType(), false);
+	BOOST_REQUIRE_EQUAL(cVal.IsEnum(), false);
+	BOOST_REQUIRE_EQUAL(cVal.IsStruct(), true);
+}
+
+BOOST_AUTO_TEST_CASE(test_data_object)
+{
 }
