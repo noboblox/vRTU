@@ -42,6 +42,6 @@ BOOST_AUTO_TEST_CASE(test_data_attribute)
 	scl_vector.Insert(mag);
 	scl_vector.Insert(ang);
 
-	SCL::DataAttribute cVal("cVal", vector, SCL::DataAttribute::MX, SCL::DataAttribute::dchg);
+	SCL::DataAttribute cVal("cVal", scl_vector, SCL::DataAttribute::MX, SCL::DataAttribute::dchg);
 	SCL::DataAttribute t("t", SCL::BasicDataAttribute::Timestamp, SCL::DataAttribute::MX, SCL::DataAttribute::no_triggers);
 }
