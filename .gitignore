@@ -9,6 +9,12 @@
 *.user
 *.userosscache
 *.sln.docstates
+*.sln
+*.cmake
+*.vcxproj
+*.vcxproj.filters
+
+
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -29,6 +35,9 @@ bld/
 [Bb]in/
 [Oo]bj/
 [Ll]og/
+[Bb]uild/
+CMakeFiles/
+CMakeCache.txt
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
@@ -350,3 +359,5 @@ MigrationBackup/
 .settings/language.settings.xml
 .cproject
 .project
+*.filters
+*.vcxproj

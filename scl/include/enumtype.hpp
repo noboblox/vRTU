@@ -25,6 +25,12 @@ namespace SCL
     ValueType NameToValue(const std::string& arValueName) const;
     const std::string& GetTypeName() const;
 
+  public: // Types are not copyable
+	EnumType(const EnumType& arOther) = delete;
+	EnumType(EnumType&& arOther) = delete;
+	EnumType& operator=(const EnumType& arOther) = delete;
+	EnumType& operator=(EnumType&& arOther) = delete;
+
   private:
     std::string mTypeId;
     ValueMap mUniqueValues;
