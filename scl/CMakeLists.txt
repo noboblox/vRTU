@@ -12,4 +12,4 @@ target_include_directories( scl
 
 target_compile_features( scl 
                          PUBLIC
-                         cxx_std_11 )
+                         cxx_std_14 )
