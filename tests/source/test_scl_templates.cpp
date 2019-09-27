@@ -8,6 +8,7 @@
 #include "dataobject.hpp"
 #include "objectreference.hpp"
 #include "enums.hpp"
+#include "datatemplatecontainer.hpp"
 
 BOOST_AUTO_TEST_CASE(test_enumtype)
 {
@@ -35,21 +36,32 @@ BOOST_AUTO_TEST_CASE(test_data_attribute)
 	SCL::BasicDataAttribute f_bda("f", SCL::BasicDataAttribute::FLOAT32); // basic BDA
 	SCL::BasicDataAttribute i_bda("i", SCL::BasicDataAttribute::INT32); // basic BDA
 
+
+	BOOST_REQUIRE_THROW(SCL::BasicDataAttribute("error1", SCL::DataAttributeBase::BasicType_enum), std::invalid_argument);
+	BOOST_REQUIRE_THROW(SCL::BasicDataAttribute("error1", SCL::DataAttributeBase::BasicType_struct), std::invalid_argument);
+
 	SCL::DataAttributeType analogue_val("analogue_value1"); // DAType
+	BOOST_REQUIRE_EQUAL(analogue_val.GetTypeName(), "analogue_value1");
 	analogue_val.Insert(f_bda);
 	analogue_val.Insert(i_bda);
 
 	SCL::BasicDataAttribute mag("mag", analogue_val); // constructed BDA
 	SCL::BasicDataAttribute ang("ang", analogue_val); // constructed BDA
+	BOOST_REQUIRE_EQUAL(mag.GetTypeName(), "analogue_value1");
+	BOOST_REQUIRE_EQUAL(mag.GetName(), "mag");
+
 	SCL::DataAttributeType scl_vector("vector1"); // DAType
 	scl_vector.Insert(mag);
 	scl_vector.Insert(ang);
 
 	SCL::DataAttribute cVal("cVal", scl_vector,SCL::FunctionalConstraint::MX, SCL::DataAttribute::dchg); // constructed DA
 	SCL::DataAttribute t("t", SCL::BasicDataAttribute::Timestamp,SCL::FunctionalConstraint::MX, SCL::DataAttribute::no_triggers); // basic DA
+	BOOST_REQUIRE_EQUAL(cVal.GetTypeName(), "vector1");
+	BOOST_REQUIRE_EQUAL(cVal.GetName(), "cVal");
 
 
 	SCL::EnumType originEnum("orCategory");
+	BOOST_REQUIRE_EQUAL(originEnum.GetTypeName(), "orCategory");
 
 	SCL::BasicDataAttribute orCat("orCat", originEnum); // enum BDA
 	SCL::DataAttribute enum_da("DA_ENUM", originEnum,SCL::FunctionalConstraint::CF, SCL::DataAttribute::dupd_qchg); // fictional enum DA
@@ -108,6 +120,75 @@ BOOST_AUTO_TEST_CASE(test_data_object)
 	wye.Insert(phsC); // insert SDO
 }
 
+BOOST_AUTO_TEST_CASE(test_data_template_container)
+{
+	try
+	{
+		// This is the storage container
+		SCL::DataTemplateContainer type_registry;
+
+		// Preconditions DAType
+		SCL::BasicDataAttribute f_bda("f", SCL::BasicDataAttribute::FLOAT32); // basic BDA
+		SCL::BasicDataAttribute i_bda("i", SCL::BasicDataAttribute::INT32); // basic BDA
+
+		auto& anval = type_registry.Manage(std::make_unique<SCL::DataAttributeType>("analogue_value1"));
+		BOOST_REQUIRE_THROW(type_registry.Manage(std::make_unique<SCL::DataAttributeType>("analogue_value1")), std::invalid_argument); // Error: duplicate
+		BOOST_REQUIRE_THROW(type_registry.Manage(std::unique_ptr<SCL::DataAttributeType>(nullptr)), std::invalid_argument); // Error: nullptr
+
+		anval.Insert(f_bda);
+		anval.Insert(i_bda);
+
+		SCL::BasicDataAttribute mag("mag", anval); // constructed BDA
+		SCL::BasicDataAttribute ang("ang", anval); // constructed BDA
+
+		auto& scl_vector = type_registry.Manage(std::make_unique<SCL::DataAttributeType>("vector1")); // DAType
+		scl_vector.Insert(mag);
+		scl_vector.Insert(ang);
+
+		SCL::DataAttribute cVal("cVal", scl_vector, SCL::FunctionalConstraint::MX, SCL::DataAttribute::dchg); // constructed DA
+		SCL::DataAttribute t("t", SCL::DataAttribute::Timestamp, SCL::FunctionalConstraint::MX, SCL::DataAttribute::no_triggers); // basic DA
+		SCL::DataAttribute q("q", SCL::DataAttribute::Quality, SCL::FunctionalConstraint::MX, SCL::DataAttribute::qchg); // basic DA
+
+		// DOType
+		auto& cmv = type_registry.Manage(std::make_unique<SCL::DataObjectType>("CMV_1", SCL::DataObjectType::CMV)); // DOType
+		BOOST_REQUIRE_THROW(type_registry.Manage(std::make_unique<SCL::DataObjectType>("CMV_1", SCL::DataObjectType::CMV)), std::invalid_argument); // Error: duplicate
+		BOOST_REQUIRE_THROW(type_registry.Manage(std::unique_ptr<SCL::DataObjectType>(nullptr)), std::invalid_argument); // Error: nullptr
+
+		cmv.Insert(cVal); // insert DA
+		cmv.Insert(t); // insert DA
+		cmv.Insert(q); // insert DA
+
+		SCL::SubDataObject phsA("phsA", cmv); // SDO
+		SCL::SubDataObject phsB("phsB", cmv); // SDO
+		SCL::SubDataObject phsC("phsC", cmv); // SDO
+
+		auto& wye = type_registry.Manage(std::make_unique<SCL::DataObjectType>("WYE_1", SCL::DataObjectType::WYE)); // DOType
+		wye.Insert(phsA); // insert SDO
+		wye.Insert(phsB); // insert SDO
+		wye.Insert(phsC); // insert SDO
+
+
+		// Precondition EnumType
+		auto& enumtype = type_registry.Manage(std::make_unique<SCL::EnumType>("switching state"));
+		
+
+		// Check Getter
+		BOOST_REQUIRE_NO_THROW(type_registry.GetEnumType("switching state"));
+		BOOST_REQUIRE_NO_THROW(type_registry.GetDOType("WYE_1"));
+		BOOST_REQUIRE_NO_THROW(type_registry.GetDOType("CMV_1"));
+		BOOST_REQUIRE_NO_THROW(type_registry.GetDAType("vector1"));
+		BOOST_REQUIRE_NO_THROW(type_registry.GetDAType("analogue_value1"));
+		
+		BOOST_REQUIRE_THROW(type_registry.GetDAType("CMV_1"), std::out_of_range); // error
+		BOOST_REQUIRE_THROW(type_registry.GetEnumType("CMV_1"), std::out_of_range); // error
+
+		return;
+	}
+	catch (std::exception& e) { std::cout << e.what() << std::endl; }
+	BOOST_FAIL("Fail: Unplanned exception occured.");
+}
+
+
 BOOST_AUTO_TEST_CASE(object_reference)
 {
 	SCL::ObjectReference ref1("QA1CSWI1.Pos.stVal"); // 3 layers
@@ -135,3 +216,6 @@ BOOST_AUTO_TEST_CASE(object_reference)
 	BOOST_REQUIRE_EQUAL(ref3.GetElementName(5), "mag");
 	BOOST_REQUIRE_EQUAL(ref3.GetElementName(6), "f");
 }
+
+
+

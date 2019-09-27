@@ -4,20 +4,23 @@
 
 namespace SCL
 {
-	DataObjectBase::~DataObjectBase()
-	{
-	}
+  DataObjectBase::DataObjectBase(const std::string& arName, const DataObjectType& arType) // Struct constructor
+        : mName(arName), mType(arType.GetTypeName()) {}
 
-	void
-	DataObjectType::Insert(const SubDataObject& arSDO)
-	{
-		mSDOs.push_back(arSDO);
-	}
+  DataObjectBase::~DataObjectBase()
+  {
+  }
 
-	void
-	DataObjectType::Insert(const DataAttribute& arDA)
-	{
-		mDAs.push_back(arDA);
-	}
+  void
+  DataObjectType::Insert(const SubDataObject& arSDO)
+  {
+  	mSDOs.push_back(arSDO);
+  }
+
+  void
+  DataObjectType::Insert(const DataAttribute& arDA)
+  {
+  	mDAs.push_back(arDA);
+  }
 
 }

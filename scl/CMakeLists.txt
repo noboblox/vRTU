@@ -3,7 +3,8 @@ add_library( scl STATIC
              source/enumtype.cpp
              source/dataobject.cpp
 	     source/iecdataelement.cpp
-             source/objectreference.cpp)
+             source/objectreference.cpp
+	     source/datatemplatecontainer.cpp)
 
 target_include_directories( scl
                             PUBLIC

@@ -13,15 +13,14 @@ namespace SCL
   class DataObjectBase
   {
   public:
-	  explicit DataObjectBase(const std::string& arName, const DataObjectType& arType) // Struct constructor
-		  : mName(arName), mrType(arType) {}
+	  explicit DataObjectBase(const std::string& arName, const DataObjectType& arType); // Struct constructor
 
 	  inline const std::string& GetName() const { return mName; }
 	  virtual ~DataObjectBase() = 0;
 
   private:
 	  std::string mName;
-	  const DataObjectType& mrType;
+	  std::string mType;
 
   };
 
@@ -106,6 +105,7 @@ namespace SCL
 	  virtual ~DataObjectType() {}
 	  virtual void Insert(const SubDataObject& arSDO);
 	  virtual void Insert(const DataAttribute& arDA);
+	  inline const std::string& GetTypeName() const {return mName;}
 
   public:
 	  DataObjectType(const DataObjectType& arOther) = delete;

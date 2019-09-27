@@ -4,7 +4,6 @@
 /// This file is for the definition of the IEC 61850 runtime datatypes. These are defined inside the <DataTypeTemplates> section of the SCL.
 /// @attention This classes are not to be confused with the data instances. Be aware that a DataTYPE contains Sub-DataINSTANCES
 
-#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -20,7 +19,9 @@ namespace SCL
   public:
 	  enum BasicType
 	  {
-		  BasicType_invalid,
+		  BasicType_struct = -2, // invalid entry. do not use
+		  BasicType_enum = -1,  // invalid entry. do not use
+
 		  BasicType_begin = 0,
 
 		  BOOLEAN = BasicType_begin,
@@ -53,31 +54,26 @@ namespace SCL
 		  PhyComAddr,
 		  TrgOps,
 		  OptFlds,
-		  SvOptFlds
+		  SvOptFlds,
+
+		  BasicType_end
 	  };
 
   public:
-	  explicit DataAttributeBase(const std::string& arName, const EnumType& arEnum) // Enum constructor
-		  : mName(arName), mType(BasicType_invalid), mpStructType(nullptr), mpEnumType(&arEnum) {}
-
-	  explicit DataAttributeBase(const std::string& arName, const DataAttributeType& arStruct) // Struct constructor
-		  : mName(arName), mType(BasicType_invalid), mpStructType(&arStruct), mpEnumType(nullptr) {}
-
-	  explicit DataAttributeBase(const std::string& arName, DataAttributeBase::BasicType aBasicType) // Basic type constructor
-		  : mName(arName), mType(aBasicType), mpStructType(nullptr), mpEnumType(nullptr)
-	  {
-		  if (mType == BasicType_invalid)
-		  {
-			  throw std::invalid_argument("Undefined basic type.");
-		  }
-	  }
+	  explicit DataAttributeBase(const std::string& arName, const EnumType& arEnum); // Enum constructor
+	  explicit DataAttributeBase(const std::string& arName, const DataAttributeType& arStruct); // Struct constructor
+	  explicit DataAttributeBase(const std::string& arName, DataAttributeBase::BasicType aBasicType); // Basic type constructor
 
 	  inline const std::string& GetName() const { return mName; }
+	  inline const std::string& GetTypeName() const { return mTypeName; }
 	  virtual ~DataAttributeBase() = 0;
 
-	  inline bool IsStruct() const { return (mpStructType != nullptr); }
-	  inline bool IsEnum() const { return (mpEnumType != nullptr); }
-	  inline bool IsBasicType() const { return (mType != BasicType_invalid); }
+	  inline bool IsStruct() const { return (mBasicType == BasicType_struct); }
+	  inline bool IsEnum() const { return (mBasicType == BasicType_enum); }
+	  inline bool IsBasicType() const { return DataAttributeBase::IsBasicTypeValid(mBasicType); }
+
+	  inline static bool IsBasicTypeValid(BasicType arType) { return (arType >= BasicType_begin) && (arType < BasicType_end);}
+	  static std::string BasicTypeToName(BasicType arType);
 
   public: // Deep copy for data-instance
 	  DataAttributeBase(const DataAttributeBase&) = default;
@@ -85,11 +81,11 @@ namespace SCL
 	  DataAttributeBase& operator=(const DataAttributeBase&) = default;
 	  DataAttributeBase& operator=(DataAttributeBase&&) = default;
 
+
   private:
 	  std::string mName;
-	  BasicType mType;
-      const DataAttributeType* mpStructType;
-	  const EnumType* mpEnumType;
+	  BasicType mBasicType;
+	  const std::string mTypeName;
 
   };
 
@@ -164,6 +160,7 @@ namespace SCL
 
 	  virtual ~DataAttributeType() {}
 	  virtual void Insert(const SubElement& arSubData);
+	  inline const std::string& GetTypeName() const {return mName;}
 
   public:
 	  DataAttributeType(const DataAttributeType& arOther) = delete;
