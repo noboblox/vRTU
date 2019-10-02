@@ -4,7 +4,9 @@ add_library( scl STATIC
              source/dataobject.cpp
 	     source/iecdataelement.cpp
              source/objectreference.cpp
-	     source/datatemplatecontainer.cpp)
+	     source/datatemplatecontainer.cpp
+             source/basicvalue.cpp
+             source/basicvaluefactory.cpp)
 
 target_include_directories( scl
                             PUBLIC

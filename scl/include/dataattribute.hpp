@@ -17,63 +17,17 @@ namespace SCL
   class DataAttributeBase
   {
   public:
-	  enum BasicType
-	  {
-		  BasicType_struct = -2, // invalid entry. do not use
-		  BasicType_enum = -1,  // invalid entry. do not use
-
-		  BasicType_begin = 0,
-
-		  BOOLEAN = BasicType_begin,
-		  INT8,
-		  INT16,
-		  INT24,
-		  INT32,
-		  INT64,
-		  INT128,
-		  INT8U,
-		  INT16U,
-		  INT24U,
-		  INT32U,
-		  FLOAT32,
-		  FLOAT64,
-		  Dbpos,
-		  Tcmd,
-		  Quality,
-		  Timestamp,
-		  VisString32,
-		  VisString64,
-		  VisString129,
-		  VisString255,
-		  Octet64,
-		  Unicode255,
-		  EntryTime,
-		  Check,
-		  ObjRef,
-		  Currency,
-		  PhyComAddr,
-		  TrgOps,
-		  OptFlds,
-		  SvOptFlds,
-
-		  BasicType_end
-	  };
-
-  public:
 	  explicit DataAttributeBase(const std::string& arName, const EnumType& arEnum); // Enum constructor
 	  explicit DataAttributeBase(const std::string& arName, const DataAttributeType& arStruct); // Struct constructor
-	  explicit DataAttributeBase(const std::string& arName, DataAttributeBase::BasicType aBasicType); // Basic type constructor
+	  explicit DataAttributeBase(const std::string& arName, const SCL::BasicTypeId& aBasicType); // Basic type constructor
 
 	  inline const std::string& GetName() const { return mName; }
 	  inline const std::string& GetTypeName() const { return mTypeName; }
 	  virtual ~DataAttributeBase() = 0;
 
-	  inline bool IsStruct() const { return (mBasicType == BasicType_struct); }
-	  inline bool IsEnum() const { return (mBasicType == BasicType_enum); }
-	  inline bool IsBasicType() const { return DataAttributeBase::IsBasicTypeValid(mBasicType); }
-
-	  inline static bool IsBasicTypeValid(BasicType arType) { return (arType >= BasicType_begin) && (arType < BasicType_end);}
-	  static std::string BasicTypeToName(BasicType arType);
+	  inline bool IsStruct() const { return (mBasicType == BasicTypeId::BasicType_struct); }
+	  inline bool IsEnum() const { return (mBasicType == BasicTypeId::BasicType_enum); }
+	  inline bool IsBasicType() const { return mBasicType.IsValid(); }
 
   public: // Deep copy for data-instance
 	  DataAttributeBase(const DataAttributeBase&) = default;
@@ -84,7 +38,7 @@ namespace SCL
 
   private:
 	  std::string mName;
-	  BasicType mBasicType;
+	  SCL::BasicTypeId mBasicType;
 	  const std::string mTypeName;
 
   };
@@ -107,7 +61,7 @@ namespace SCL
   public:
 	  explicit DataAttribute(const std::string& arName, const EnumType& arEnum, FunctionalConstraint aFc, Trigger aTrigger);
 	  explicit DataAttribute(const std::string& arName, const DataAttributeType& arStruct, FunctionalConstraint aFc, Trigger aTrigger);
-	  explicit DataAttribute(const std::string& arName, DataAttributeBase::BasicType aBasicType, FunctionalConstraint aFc, Trigger aTrigger);
+	  explicit DataAttribute(const std::string& arName, const BasicTypeId& aBasicType, FunctionalConstraint aFc, Trigger aTrigger);
 
 	  virtual ~DataAttribute() {}
 
@@ -138,7 +92,7 @@ namespace SCL
 	  explicit BasicDataAttribute(const std::string& arName, const DataAttributeType& arStruct) // Struct constructor
 		  : DataAttributeBase(arName, arStruct) {}
 
-	  explicit BasicDataAttribute(const std::string& arName, DataAttributeBase::BasicType aBasicType) // Basic type constructor
+	  explicit BasicDataAttribute(const std::string& arName, const BasicTypeId& aBasicType) // Basic type constructor
 		  : DataAttributeBase(arName, aBasicType) {}
 
 	  virtual ~BasicDataAttribute() {}

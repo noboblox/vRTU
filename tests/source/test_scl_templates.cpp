@@ -34,12 +34,12 @@ BOOST_AUTO_TEST_CASE(test_enumtype)
 
 BOOST_AUTO_TEST_CASE(test_data_attribute)
 {
-	SCL::BasicDataAttribute f_bda("f", SCL::BasicDataAttribute::FLOAT32); // basic BDA
-	SCL::BasicDataAttribute i_bda("i", SCL::BasicDataAttribute::INT32); // basic BDA
+	SCL::BasicDataAttribute f_bda("f", SCL::BasicTypeId::FLOAT32); // basic BDA
+	SCL::BasicDataAttribute i_bda("i", SCL::BasicTypeId::INT32); // basic BDA
 
 
-	BOOST_REQUIRE_THROW(SCL::BasicDataAttribute("error1", SCL::DataAttributeBase::BasicType_enum), std::invalid_argument);
-	BOOST_REQUIRE_THROW(SCL::BasicDataAttribute("error1", SCL::DataAttributeBase::BasicType_struct), std::invalid_argument);
+	BOOST_REQUIRE_THROW(SCL::BasicDataAttribute("error1", SCL::BasicTypeId::BasicType_enum), std::invalid_argument);
+	BOOST_REQUIRE_THROW(SCL::BasicDataAttribute("error1", SCL::BasicTypeId::BasicType_struct), std::invalid_argument);
 
 	SCL::DataAttributeType analogue_val("analogue_value1"); // DAType
 	BOOST_REQUIRE_EQUAL(analogue_val.GetTypeName(), "analogue_value1");
@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE(test_data_attribute)
 	scl_vector.Insert(ang);
 
 	SCL::DataAttribute cVal("cVal", scl_vector,SCL::FunctionalConstraint::MX, SCL::DataAttribute::dchg); // constructed DA
-	SCL::DataAttribute t("t", SCL::BasicDataAttribute::Timestamp,SCL::FunctionalConstraint::MX, SCL::DataAttribute::no_triggers); // basic DA
+	SCL::DataAttribute t("t", SCL::BasicTypeId::Timestamp,SCL::FunctionalConstraint::MX, SCL::DataAttribute::no_triggers); // basic DA
 	BOOST_REQUIRE_EQUAL(cVal.GetTypeName(), "vector1");
 	BOOST_REQUIRE_EQUAL(cVal.GetName(), "cVal");
 
@@ -88,8 +88,8 @@ BOOST_AUTO_TEST_CASE(test_data_attribute)
 BOOST_AUTO_TEST_CASE(test_data_object)
 {
 	// Preconditions
-	SCL::BasicDataAttribute f_bda("f", SCL::BasicDataAttribute::FLOAT32); // basic BDA
-	SCL::BasicDataAttribute i_bda("i", SCL::BasicDataAttribute::INT32); // basic BDA
+	SCL::BasicDataAttribute f_bda("f", SCL::BasicTypeId::FLOAT32); // basic BDA
+	SCL::BasicDataAttribute i_bda("i", SCL::BasicTypeId::INT32); // basic BDA
 
 	SCL::DataAttributeType analogue_val("analogue_value1"); // DAType
 	analogue_val.Insert(f_bda);
@@ -102,8 +102,8 @@ BOOST_AUTO_TEST_CASE(test_data_object)
 	scl_vector.Insert(ang);
 
 	SCL::DataAttribute cVal("cVal", scl_vector,SCL::FunctionalConstraint::MX, SCL::DataAttribute::dchg); // constructed DA
-	SCL::DataAttribute t("t", SCL::DataAttribute::Timestamp,SCL::FunctionalConstraint::MX, SCL::DataAttribute::no_triggers); // basic DA
-	SCL::DataAttribute q("q", SCL::DataAttribute::Quality,SCL::FunctionalConstraint::MX, SCL::DataAttribute::qchg); // basic DA
+	SCL::DataAttribute t("t", SCL::BasicTypeId::Timestamp,SCL::FunctionalConstraint::MX, SCL::DataAttribute::no_triggers); // basic DA
+	SCL::DataAttribute q("q", SCL::BasicTypeId::Quality,SCL::FunctionalConstraint::MX, SCL::DataAttribute::qchg); // basic DA
 
 	// Test DOs
 	SCL::DataObjectType cmv("CMV_1", SCL::DataObjectType::CMV); // DOType
@@ -129,8 +129,8 @@ BOOST_AUTO_TEST_CASE(test_data_template_container)
 		SCL::DataTemplateContainer type_registry;
 
 		// Preconditions DAType
-		SCL::BasicDataAttribute f_bda("f", SCL::BasicDataAttribute::FLOAT32); // basic BDA
-		SCL::BasicDataAttribute i_bda("i", SCL::BasicDataAttribute::INT32); // basic BDA
+		SCL::BasicDataAttribute f_bda("f", SCL::BasicTypeId::FLOAT32); // basic BDA
+		SCL::BasicDataAttribute i_bda("i", SCL::BasicTypeId::INT32); // basic BDA
 
 		auto& anval = type_registry.Manage(std::make_unique<SCL::DataAttributeType>("analogue_value1"));
 		BOOST_REQUIRE_THROW(type_registry.Manage(std::make_unique<SCL::DataAttributeType>("analogue_value1")), std::invalid_argument); // Error: duplicate
@@ -147,8 +147,8 @@ BOOST_AUTO_TEST_CASE(test_data_template_container)
 		scl_vector.Insert(ang);
 
 		SCL::DataAttribute cVal("cVal", scl_vector, SCL::FunctionalConstraint::MX, SCL::DataAttribute::dchg); // constructed DA
-		SCL::DataAttribute t("t", SCL::DataAttribute::Timestamp, SCL::FunctionalConstraint::MX, SCL::DataAttribute::no_triggers); // basic DA
-		SCL::DataAttribute q("q", SCL::DataAttribute::Quality, SCL::FunctionalConstraint::MX, SCL::DataAttribute::qchg); // basic DA
+		SCL::DataAttribute t("t", SCL::BasicTypeId::Timestamp, SCL::FunctionalConstraint::MX, SCL::DataAttribute::no_triggers); // basic DA
+		SCL::DataAttribute q("q", SCL::BasicTypeId::Quality, SCL::FunctionalConstraint::MX, SCL::DataAttribute::qchg); // basic DA
 
 		// DOType
 		auto& cmv = type_registry.Manage(std::make_unique<SCL::DataObjectType>("CMV_1", SCL::DataObjectType::CMV)); // DOType
