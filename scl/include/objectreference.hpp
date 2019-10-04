@@ -20,6 +20,10 @@ namespace SCL
   {
   public:
     explicit ObjectReference(const std::string& arReference, FunctionalConstraint aFC = FunctionalConstraint::undefined, char arSeperator = '.');
+	explicit ObjectReference()
+	  : mSeperator('.'),
+	    mFC(FunctionalConstraint::undefined),
+	    mElements() {}
     virtual ~ObjectReference();
 
   public:

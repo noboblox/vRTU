@@ -17,7 +17,7 @@ BOOST_AUTO_TEST_CASE(test_basic_value_create)
 
   std::vector<std::unique_ptr<BasicValueBase>> values;
 
-  for (int i = static_cast<int>(SCL::BasicTypeId::BasicType_begin); i < static_cast<int>(SCL::BasicTypeId::VisString32); ++i)
+  for (int i = static_cast<int>(SCL::BasicTypeId::BasicType_begin); i < static_cast<int>(SCL::BasicTypeId::BasicType_end); ++i)
   {
     factory.Create(static_cast<SCL::BasicTypeId::Type>(i));
   }

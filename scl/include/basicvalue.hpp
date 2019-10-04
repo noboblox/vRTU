@@ -196,6 +196,15 @@ namespace SCL
   using ValueUnicode255 = BasicValue<std::string,          BasicTypeId::Unicode255>;
   using ValueObjRef     = BasicValue<SCL::ObjectReference, BasicTypeId::ObjRef>;
 
+  // Generic class without special function
+  using ValueOctet64    = BasicValue<std::string,          BasicTypeId::Octet64>;
+  using ValueEntryTime  = BasicValue<std::string,          BasicTypeId::EntryTime>;
+  using ValueCheck      = BasicValue<std::string,          BasicTypeId::Check>;
+  using ValueCurrency   = BasicValue<std::string,          BasicTypeId::Currency>;
+  using ValuePhyComAddr = BasicValue<std::string,          BasicTypeId::PhyComAddr>;
+  using ValueTrgOps     = BasicValue<std::string,          BasicTypeId::TrgOps>;
+  using ValueOptFlds    = BasicValue<std::string,          BasicTypeId::OptFlds>;
+  using ValueSvOptFlds  = BasicValue<std::string,          BasicTypeId::SvOptFlds>;
 
 
 

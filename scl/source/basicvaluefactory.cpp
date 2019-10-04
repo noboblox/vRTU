@@ -74,32 +74,46 @@ namespace SCL
       return std::make_unique<SCL::ValueTimeStamp>();
       break;
     case BasicTypeId::VisString32:
+		return std::make_unique<SCL::ValueString32>();
       break;
     case BasicTypeId::VisString64:
+		return std::make_unique<SCL::ValueString64>();
       break;
     case BasicTypeId::VisString129:
+		return std::make_unique<SCL::ValueString129>();
       break;
     case BasicTypeId::VisString255:
+		return std::make_unique<SCL::ValueString255>();
       break;
     case BasicTypeId::Octet64:
+		return std::make_unique<SCL::ValueOctet64>();
       break;
     case BasicTypeId::Unicode255:
+		return std::make_unique<SCL::ValueUnicode255>();
       break;
     case BasicTypeId::EntryTime:
+		return std::make_unique<SCL::ValueEntryTime>();
       break;
     case BasicTypeId::Check:
+		return std::make_unique<SCL::ValueCheck>();
       break;
     case BasicTypeId::ObjRef:
+		return std::make_unique<SCL::ValueObjRef>();
       break;
     case BasicTypeId::Currency:
+		return std::make_unique<SCL::ValueCurrency>();
       break;
     case BasicTypeId::PhyComAddr:
+		return std::make_unique<SCL::ValuePhyComAddr>();
       break;
     case BasicTypeId::TrgOps:
+		return std::make_unique<SCL::ValueTrgOps>();
       break;
     case BasicTypeId::OptFlds:
+		return std::make_unique<SCL::ValueOptFlds>();
       break;
     case BasicTypeId::SvOptFlds:
+		return std::make_unique<SCL::ValueSvOptFlds>();
       break;
 
     default:
