@@ -10,7 +10,9 @@ add_library( vrtu STATIC
              datamodel/basecontrol.cpp
              datamodel/baseelement.cpp
            )
-           
+    
+set_property( TARGET vrtu PROPERTY CXX_STANDARD 14 )
+
 target_include_directories( vrtu PUBLIC
                             datamodel
                             telecontrol
