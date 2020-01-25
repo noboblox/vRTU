@@ -13,8 +13,8 @@ namespace TC
     using PropertyMap = std::unordered_map<std::string, std::string>;
 
   public:
-    static constexpr char* csTypeId = "TypeId"; //!< ASDU type for the data point
-    static constexpr char* csDataId = "DataId"; //!< Information object address
+    static constexpr const char* csTypeId = "TypeId"; //!< ASDU type for the data point
+    static constexpr const char* csDataId = "DataId"; //!< Information object address
 
   public:
     Iec104DataDefiniton(long aTypeId, long aDataId);
