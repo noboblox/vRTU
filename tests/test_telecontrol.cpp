@@ -5,6 +5,7 @@
  *      Author: Rene Buettgen
  */
 
+#define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE TestTelecontrol
 
 #include <boost/test/unit_test.hpp>

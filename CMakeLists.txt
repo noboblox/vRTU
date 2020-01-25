@@ -17,15 +17,21 @@ target_include_directories( vrtu PUBLIC
                             datamodel
                             telecontrol
                             util
+                          )
+
+target_include_directories( vrtu PRIVATE
                             external/lib60870/lib60870-C/src/inc/api
                             external/lib60870/lib60870-C/src/hal/inc
                           )
                           
 target_link_libraries( vrtu
                        PRIVATE Boost::boost 
-                       PRIVATE pthread
                        PRIVATE lib60870
                      )
+
+if(!WIN32)
+  target_link_libraries( vrtu PRIVATE pthread)
+endif()
 
 add_subdirectory( external )
 add_subdirectory( tests )
