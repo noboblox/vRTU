@@ -2,6 +2,7 @@
 #define TC_BASEPROPERTYLIST_HPP_
 
 #include <string>
+#include "enumtype.hpp"
 
 namespace TC
 {
@@ -22,6 +23,12 @@ namespace TC
     std::string GetString(const std::string arKey, bool aAllowDefault = true) const;
     double GetReal(const std::string& arKey, bool aAllowDefault = true) const;
     bool GetBool(const std::string& arKey, bool aAllowDefault = true);
+
+    template<typename PlainEnumT>
+    UTIL::Enum<PlainEnumT> GetEnum(const std::string& arKey, bool aAllowDefault = true) const
+    {
+      return UTIL::Enum<PlainEnumT> (GetString(arKey, aAllowDefault));
+    }
 
   protected:
     static constexpr const char* csTrue = "true";

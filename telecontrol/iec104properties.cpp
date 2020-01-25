@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 
+  template<>
   TC::TypeIdEnum::EnumDefinition const TC::TypeIdEnum::msDefinition
   {
     {"M_SP_NA_1", M_SP_NA_1},
@@ -95,9 +96,9 @@ namespace TC
   constexpr const char* Iec104DataDefinition::csTypeId;
   constexpr const char* Iec104DataDefinition::csDataId;
    
-  Iec104DataDefinition::Iec104DataDefinition(long aTypeId, long aDataId)
+  Iec104DataDefinition::Iec104DataDefinition(const TypeIdEnum& arTypeId, long aDataId)
     : BasePropertyList(),
-      mProperties{ {csTypeId, std::to_string(aTypeId)},
+      mProperties{ {csTypeId, arTypeId.GetString()},
                    {csDataId, std::to_string(aDataId)} }
   {}
   

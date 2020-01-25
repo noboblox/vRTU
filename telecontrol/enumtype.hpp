@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <iostream>
 
 namespace UTIL
 {
@@ -75,6 +76,13 @@ namespace UTIL
     }
     static const EnumDefinition msDefinition;
   };
+
+  template<typename PlainEnumT>
+  std::ostream& operator<<(std::ostream& arOut, const Enum<PlainEnumT>& arObject)
+  {
+    return arOut << arObject.GetString();
+  }
+
 }
 
 #endif

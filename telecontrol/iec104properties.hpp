@@ -27,7 +27,7 @@ namespace TC
     static constexpr const char* csDataId = "DataId"; //!< Information object address
 
   public:
-    Iec104DataDefinition(long aTypeId, long aDataId);
+    Iec104DataDefinition(const TypeIdEnum& arTypeId, long aDataId);
     virtual ~Iec104DataDefinition();
 
     virtual const bool HasExplicitProperty(const std::string& arKey) const override;

@@ -34,17 +34,18 @@ BOOST_AUTO_TEST_CASE(ShallSucceedBasicConnect)
 
 BOOST_AUTO_TEST_CASE(ShallSucceedCreate104DatapointDefinition)
 {
-  const long typeId = M_DP_NA_1;
-  const long dataId = 5100;
+  const TC::TypeIdEnum typeId(M_DP_NA_1); // -> enum label string
+  const long dataId = M_DP_TB_1; // -> numeric string
   std::unique_ptr<const TC::BasePropertyList> pDoublePointDef(new TC::Iec104DataDefinition(typeId, dataId));
 
-  BOOST_CHECK_EQUAL(pDoublePointDef->GetInt(TC::Iec104DataDefinition::csTypeId), typeId);
-  BOOST_CHECK_EQUAL(pDoublePointDef->GetString(TC::Iec104DataDefinition::csTypeId), std::to_string(typeId));
+  BOOST_CHECK_EQUAL(pDoublePointDef->GetEnum<TypeID>(TC::Iec104DataDefinition::csTypeId), typeId);
+  BOOST_CHECK_EQUAL(pDoublePointDef->GetString(TC::Iec104DataDefinition::csTypeId), typeId.GetString());
 
   BOOST_CHECK_EQUAL(pDoublePointDef->GetInt(TC::Iec104DataDefinition::csDataId), dataId);
   BOOST_CHECK_EQUAL(pDoublePointDef->GetString(TC::Iec104DataDefinition::csDataId), std::to_string(dataId));
 
   BOOST_CHECK_THROW(pDoublePointDef->GetInt("unknownKey"), std::invalid_argument);
+  BOOST_CHECK_THROW(pDoublePointDef->GetEnum<TypeID>(TC::Iec104DataDefinition::csDataId), std::invalid_argument); // Invalid: Cannot convert "31" -> "M_DP_TB_1"
 }
 
 // Define a test enum
@@ -55,6 +56,7 @@ enum Test
   THREE = 3
 };
 
+template<>
 UTIL::Enum<Test>::EnumDefinition const UTIL::Enum<Test>::msDefinition
 {
   {"ONE", ONE},
