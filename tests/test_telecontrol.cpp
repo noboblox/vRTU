@@ -11,7 +11,7 @@
 #include <boost/test/unit_test.hpp>
 #include "iec104server.hpp"
 #include "iec104properties.hpp"
-
+#include "enumtype.hpp"
 #include "mock_testclient.hpp"
 
 BOOST_AUTO_TEST_CASE(ShallSucceedConstructServer)
@@ -47,6 +47,63 @@ BOOST_AUTO_TEST_CASE(ShallSucceedCreate104DatapointDefinition)
   BOOST_CHECK_THROW(pDoublePointDef->GetInt("unknownKey"), std::invalid_argument);
 }
 
+// Define a test enum
+enum Test
+{
+  ONE = 1,
+  TWO = 2,
+  THREE = 3
+};
+
+UTIL::Enum<Test>::EnumDefinition const UTIL::Enum<Test>::msDefinition
+{
+  {"ONE", ONE},
+  {"TWO", TWO},
+  {"THREE", THREE}
+};
+
+  BOOST_AUTO_TEST_CASE(ShallSucceedCheckEnumType)
+{  
+  // See enum definition above
+  UTIL::Enum<Test> testValue("ONE");
+  BOOST_CHECK_EQUAL(testValue.GetValue(), ONE);
+  BOOST_CHECK_EQUAL(testValue.GetString(), "ONE");
+
+  testValue = "TWO";
+  BOOST_CHECK_EQUAL(testValue.GetValue(), TWO);
+  BOOST_CHECK_EQUAL(testValue.GetString(), "TWO");
+
+  testValue = THREE;
+  BOOST_CHECK_EQUAL(testValue.GetValue(), THREE);
+  BOOST_CHECK_EQUAL(testValue.GetString(), "THREE");
+
+  BOOST_CHECK_THROW(UTIL::Enum<Test> invalidValue("FOUR"), std::invalid_argument);
+
+  testValue = "TWO";
+  UTIL::Enum<Test> compare("TWO");
+  BOOST_CHECK_EQUAL(testValue == compare, true);
+  BOOST_CHECK_EQUAL(testValue != compare, false);
+  BOOST_CHECK_EQUAL(testValue <= compare, true);
+  BOOST_CHECK_EQUAL(testValue >= compare, true);
+  BOOST_CHECK_EQUAL(testValue <  compare, false);
+  BOOST_CHECK_EQUAL(testValue >  compare, false);
+  
+  compare = "THREE";
+  BOOST_CHECK_EQUAL(testValue == compare, false);
+  BOOST_CHECK_EQUAL(testValue != compare, true);
+  BOOST_CHECK_EQUAL(testValue <= compare, true);
+  BOOST_CHECK_EQUAL(testValue >= compare, false);
+  BOOST_CHECK_EQUAL(testValue <  compare, true);
+  BOOST_CHECK_EQUAL(testValue >  compare, false);
+
+  compare = "ONE";
+  BOOST_CHECK_EQUAL(testValue == compare, false);
+  BOOST_CHECK_EQUAL(testValue != compare, true);
+  BOOST_CHECK_EQUAL(testValue <= compare, false);
+  BOOST_CHECK_EQUAL(testValue >= compare, true);
+  BOOST_CHECK_EQUAL(testValue <  compare, false);
+  BOOST_CHECK_EQUAL(testValue >  compare, true);
+  }
 
 
 

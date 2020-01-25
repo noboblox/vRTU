@@ -6,8 +6,18 @@
 #include <unordered_map>
 #include <string>
 
+#include "enumtype.hpp"
+
+extern "C"
+{
+#include "iec60870_common.h"
+#include "cs101_information_objects.h"
+}
+
 namespace TC
 {
+  using TypeIdEnum = UTIL::Enum<TypeID>;
+  
   class Iec104DataDefinition : public BasePropertyList
   {
     using PropertyMap = std::unordered_map<std::string, std::string>;
