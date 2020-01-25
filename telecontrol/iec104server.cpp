@@ -201,6 +201,24 @@ namespace TC
     mpImpl->StopServer();
   }
 
+  void 
+  Iec104Server::RegisterControlData(const std::string& arId, const BasePropertyList& arDefinition)
+  {
+
+  }
+
+  void
+  Iec104Server::RegisterStatusData(const std::string& arId, const BasePropertyList& arDefinition)
+  {
+
+  }
+
+  void
+  Iec104Server::UnregisterDatapoint(const std::string& arId)
+  {
+
+  }
+
 
 
 } /* namespace TC */

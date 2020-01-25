@@ -9,8 +9,8 @@ enable_testing()
 add_library( vrtu STATIC
              util/watchdog.cpp
              telecontrol/iec104server.cpp
-             datamodel/basecontrol.cpp
-             datamodel/baseelement.cpp
+             telecontrol/basepropertylist.cpp
+             telecontrol/iec104properties.cpp
            )
 
 target_include_directories( vrtu PUBLIC

@@ -10,22 +10,13 @@
 
 #include <functional>
 
-namespace DM
-{
-  class BaseGridData;
-  class BaseDataValue;
-}
+#include "basepropertylist.hpp"
 
 namespace TC
 {
 
-  class BaseServerParameter;
+  struct BaseServerParameter;
   class BaseServerStatus;
-
-  class BaseTelegramId;
-  class BaseControlId;
-  class BaseStatusId;
-
 
   class TelecontrolServerInterface
   {
@@ -40,19 +31,18 @@ namespace TC
     TelecontrolServerInterface& operator=(TelecontrolServerInterface&&) = delete;
 
   public:
-    virtual void RegisterControllable(const BaseControlId& arControlId, DM::BaseGridData& arData) = 0;
-    virtual void RegisterStatusOnly(const BaseStatusId& arStatusId, DM::BaseGridData& arData) = 0;
-    virtual void UnregisterTelegram(const BaseTelegramId& arId) = 0;
+    virtual void RegisterControlData(const std::string& arId, const BasePropertyList& arDefinition) = 0;
+    virtual void RegisterStatusData(const std::string& arId, const BasePropertyList& arDefinition) = 0;
+    virtual void UnregisterDatapoint(const std::string& arId) = 0;
 
     virtual void StartServer() = 0;
     virtual void StopServer() = 0;
 
   public:
-    virtual void OnStatusChange(const DM::BaseGridData& arData) const = 0;
-    using SelectRequest  = std::function<bool(const DM::BaseDataValue&)>;
-    using OperateRequest = std::function<bool(const DM::BaseDataValue&)>;
-    using CancelRequest  = std::function<bool()>;
-    using ReadRequest    = std::function<DM::BaseDataValue()>;
+    //using SelectRequest  = std::function<bool(const DM::BaseDataValue&)>;
+    //using OperateRequest = std::function<bool(const DM::BaseDataValue&)>;
+    //using CancelRequest  = std::function<bool()>;
+    //using ReadRequest    = std::function<DM::BaseDataValue()>;
 
 };
 

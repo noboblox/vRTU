@@ -22,14 +22,12 @@ namespace TC
     Iec104Server& operator=(Iec104Server&&) = delete;
 
   public:
-    virtual void RegisterControllable(const BaseControlId& arControlId, DM::BaseGridData& arData) override {}
-    virtual void RegisterStatusOnly(const BaseStatusId& arStatusId, DM::BaseGridData& arData) override {}
-    virtual void UnregisterTelegram(const BaseTelegramId& arId) override {}
+    virtual void RegisterControlData(const std::string& arId, const BasePropertyList& arDefinition) override;
+    virtual void RegisterStatusData(const std::string& arId, const BasePropertyList& arDefinition) override;
+    virtual void UnregisterDatapoint(const std::string& arId) override;
 
     virtual void StartServer() override;
     virtual void StopServer() override;
-
-    virtual void OnStatusChange(const DM::BaseGridData& arData) const override {}
 
   private:
     Iec104ServerImpl* mpImpl;
