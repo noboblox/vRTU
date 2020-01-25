@@ -30,8 +30,8 @@ namespace TC
       if (!CheckPreconditions(arSettings))
         throw std::invalid_argument("Unsupported arguments provided");
 
-      const char* ipString = arSettings.mIpAddress.to_string().c_str();
-      CS104_Slave_setLocalAddress(mpSlave, ipString);
+      const std::string ipString = arSettings.mIpAddress.to_string();
+      CS104_Slave_setLocalAddress(mpSlave, ipString.c_str());
       CS104_Slave_setLocalPort(mpSlave, arSettings.mPort);
       SetupHandlers();
     }
