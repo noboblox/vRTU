@@ -36,13 +36,13 @@ BOOST_AUTO_TEST_CASE(ShallSucceedCreate104DatapointDefinition)
 {
   const long typeId = M_DP_NA_1;
   const long dataId = 5100;
-  std::unique_ptr<const TC::BasePropertyList> pDoublePointDef(new TC::Iec104DataDefiniton(typeId, dataId));
+  std::unique_ptr<const TC::BasePropertyList> pDoublePointDef(new TC::Iec104DataDefinition(typeId, dataId));
 
-  BOOST_CHECK_EQUAL(pDoublePointDef->GetInt(TC::Iec104DataDefiniton::csTypeId), typeId);
-  BOOST_CHECK_EQUAL(pDoublePointDef->GetString(TC::Iec104DataDefiniton::csTypeId), std::to_string(typeId));
+  BOOST_CHECK_EQUAL(pDoublePointDef->GetInt(TC::Iec104DataDefinition::csTypeId), typeId);
+  BOOST_CHECK_EQUAL(pDoublePointDef->GetString(TC::Iec104DataDefinition::csTypeId), std::to_string(typeId));
 
-  BOOST_CHECK_EQUAL(pDoublePointDef->GetInt(TC::Iec104DataDefiniton::csDataId), dataId);
-  BOOST_CHECK_EQUAL(pDoublePointDef->GetString(TC::Iec104DataDefiniton::csDataId), std::to_string(dataId));
+  BOOST_CHECK_EQUAL(pDoublePointDef->GetInt(TC::Iec104DataDefinition::csDataId), dataId);
+  BOOST_CHECK_EQUAL(pDoublePointDef->GetString(TC::Iec104DataDefinition::csDataId), std::to_string(dataId));
 
   BOOST_CHECK_THROW(pDoublePointDef->GetInt("unknownKey"), std::invalid_argument);
 }

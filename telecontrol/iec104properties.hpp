@@ -8,7 +8,7 @@
 
 namespace TC
 {
-  class Iec104DataDefiniton : public BasePropertyList
+  class Iec104DataDefinition : public BasePropertyList
   {
     using PropertyMap = std::unordered_map<std::string, std::string>;
 
@@ -17,8 +17,8 @@ namespace TC
     static constexpr const char* csDataId = "DataId"; //!< Information object address
 
   public:
-    Iec104DataDefiniton(long aTypeId, long aDataId);
-    virtual ~Iec104DataDefiniton();
+    Iec104DataDefinition(long aTypeId, long aDataId);
+    virtual ~Iec104DataDefinition();
 
     virtual const bool HasExplicitProperty(const std::string& arKey) const override;
     virtual const std::string& GetExplicitProperty(const std::string arKey) const override;
