@@ -1,2 +1,2 @@
 # vRTU
- A virtual remote terminal unit impementation for IEC 61850
+ A virtual remote terminal unit impementation for IEC 60870
