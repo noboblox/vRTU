@@ -21,7 +21,8 @@ target_include_directories( vrtu PUBLIC
                             external/lib60870/lib60870-C/src/hal/inc
                           )
                           
-target_link_libraries( vrtu 
+target_link_libraries( vrtu
+                       PRIVATE Boost::boost 
                        PRIVATE pthread
                        PRIVATE lib60870
                      )

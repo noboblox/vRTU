@@ -8,4 +8,7 @@ if ( Boost_FOUND )
 	                       Boost::system
                            Boost::unit_test_framework
                            PROPERTIES IMPORTED_GLOBAL TRUE )
+
+message (STATUS "boost include dir is: ${Boost_INCLUDE_DIRS}")
+message (STATUS "boost binary dir is: ${Boost_LIBRARY_DIRS}")
 endif ()
