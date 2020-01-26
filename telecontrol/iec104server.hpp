@@ -4,12 +4,12 @@
 #include "telecontrolserverinterface.hpp"
 #include "serverparameter.hpp"
 
-namespace TC
+namespace IEC104
 {
   class Iec104ServerImpl;
   class Iec104RawMessage;
 
-  class Iec104Server: public TelecontrolServerInterface
+  class Iec104Server: public TC::TelecontrolServerInterface
   {
   public:
     Iec104Server(const Iec104ServerParameter& arSettings);
@@ -22,9 +22,12 @@ namespace TC
     Iec104Server& operator=(Iec104Server&&) = delete;
 
   public:
-    virtual void RegisterControlData(const std::string& arId, const BasePropertyList& arDefinition) override;
-    virtual void RegisterStatusData(const std::string& arId, const BasePropertyList& arDefinition) override;
-    virtual void UnregisterDatapoint(const std::string& arId) override;
+    virtual void RegisterControlData(const TC::BasePropertyList& arDefinition) override;
+    virtual void RegisterStatusData(const TC::BasePropertyList& arDefinition) override;
+    virtual void UnregisterData(const std::string& arId) override;
+
+    virtual size_t CountStatusData() const override;
+    virtual size_t CountControlData() const override;
 
     virtual void StartServer() override;
     virtual void StopServer() override;

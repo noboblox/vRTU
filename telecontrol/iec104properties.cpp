@@ -3,8 +3,9 @@
 #include <stdexcept>
 
   template<>
-  TC::TypeIdEnum::EnumDefinition const TC::TypeIdEnum::msDefinition
+  IEC104::TypeIdEnum::EnumDefinition const IEC104::TypeIdEnum::msDefinition
   {
+    // TODO: S_, F_, P_
     {"M_SP_NA_1", M_SP_NA_1},
     {"M_SP_TA_1", M_SP_TA_1},
     {"M_DP_NA_1", M_DP_NA_1},
@@ -37,7 +38,7 @@
     {"M_EP_TD_1", M_EP_TD_1},
     {"M_EP_TE_1", M_EP_TE_1},
     {"M_EP_TF_1", M_EP_TF_1},
-    {"S_IT_TC_1", S_IT_TC_1},
+ // {"S_IT_TC_1", S_IT_TC_1},
     {"C_SC_NA_1", C_SC_NA_1},
     {"C_DC_NA_1", C_DC_NA_1},
     {"C_RC_NA_1", C_RC_NA_1},
@@ -53,7 +54,7 @@
     {"C_SE_TC_1", C_SE_TC_1},
     {"C_BO_TA_1", C_BO_TA_1},
     {"M_EI_NA_1", M_EI_NA_1},
-    {"S_CH_NA_1", S_CH_NA_1},
+ /* {"S_CH_NA_1", S_CH_NA_1},
     {"S_RP_NA_1", S_RP_NA_1},
     {"S_AR_NA_1", S_AR_NA_1},
     {"S_KR_NA_1", S_KR_NA_1},
@@ -65,7 +66,7 @@
     {"S_UR_NA_1", S_UR_NA_1},
     {"S_UK_NA_1", S_UK_NA_1},
     {"S_UA_NA_1", S_UA_NA_1},
-    {"S_UC_NA_1", S_UC_NA_1},
+    {"S_UC_NA_1", S_UC_NA_1}, */
     {"C_IC_NA_1", C_IC_NA_1},
     {"C_CI_NA_1", C_CI_NA_1},
     {"C_RD_NA_1", C_RD_NA_1},
@@ -73,8 +74,8 @@
     {"C_TS_NA_1", C_TS_NA_1},
     {"C_RP_NA_1", C_RP_NA_1},
     {"C_CD_NA_1", C_CD_NA_1},
-    {"C_TS_TA_1", C_TS_TA_1},
-    {"P_ME_NA_1", P_ME_NA_1},
+    {"C_TS_TA_1", C_TS_TA_1} //,
+/*  {"P_ME_NA_1", P_ME_NA_1},
     {"P_ME_NB_1", P_ME_NB_1},
     {"P_ME_NC_1", P_ME_NC_1},
     {"P_AC_NA_1", P_AC_NA_1},
@@ -85,14 +86,11 @@
     {"F_AF_NA_1", F_AF_NA_1},
     {"F_SG_NA_1", F_SG_NA_1},
     {"F_DR_TA_1", F_DR_TA_1},
-    {"F_SC_NB_1", F_SC_NB_1}
+    {"F_SC_NB_1", F_SC_NB_1} */
   };
 
-namespace TC
+namespace IEC104
 {
-
-
-
   constexpr const char* Iec104DataDefinition::csTypeId;
   constexpr const char* Iec104DataDefinition::csDataId;
    

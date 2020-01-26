@@ -9,6 +9,7 @@
 #define TC_TELECONTROLSERVERINTERFACE_HPP_
 
 #include <functional>
+#include <cstddef>
 
 #include "basepropertylist.hpp"
 
@@ -31,9 +32,12 @@ namespace TC
     TelecontrolServerInterface& operator=(TelecontrolServerInterface&&) = delete;
 
   public:
-    virtual void RegisterControlData(const std::string& arId, const BasePropertyList& arDefinition) = 0;
-    virtual void RegisterStatusData(const std::string& arId, const BasePropertyList& arDefinition) = 0;
-    virtual void UnregisterDatapoint(const std::string& arId) = 0;
+    virtual void RegisterControlData(const BasePropertyList& arDefinition) = 0;
+    virtual void RegisterStatusData(const BasePropertyList& arDefinition) = 0;
+    virtual void UnregisterData(const std::string& arId) = 0;
+
+    virtual size_t CountStatusData() const = 0;
+    virtual size_t CountControlData() const = 0;
 
     virtual void StartServer() = 0;
     virtual void StopServer() = 0;

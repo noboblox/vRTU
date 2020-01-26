@@ -6,7 +6,14 @@
  */
 
 #include "iec104server.hpp"
+
 #include <mutex>
+#include <memory>
+#include <stdexcept>
+#include <unordered_map>
+#include <string>
+
+#include "iec104data.hpp"
 
 extern "C"
 {
@@ -14,12 +21,15 @@ extern "C"
 #include "cs104_slave.h"
 }
 
-namespace TC
+namespace IEC104
 {
+  class BaseIec104Data;
 
   class Iec104ServerImpl
   {
   public:
+    using DataMap = std::unordered_map<std::string, SpDataPtr>;
+
     static constexpr size_t msDefaultQueueSize = 1024;
 
     Iec104ServerImpl(const Iec104ServerParameter& arSettings)
@@ -53,7 +63,52 @@ namespace TC
       CS104_Slave_start(mpSlave);
     }
 
+    void
+      RegisterStatusData(const TC::BasePropertyList& arDefinition)
+    {
+      RegisterInternal(arDefinition, mStatusData);
+    }
+    
+    void
+    RegisterControlData(const TC::BasePropertyList& arDefinition)
+    {
+      RegisterInternal(arDefinition, mControlData);
+    }
+
+    void UnregisterData(const std::string& arId)
+    {
+      const std::lock_guard<std::mutex> owner(mAccess);
+
+      DataMap::iterator target;
+      if ((target = mStatusData.find(arId)) != mStatusData.end())
+        mStatusData.erase(target);
+      if ((target = mControlData.find(arId)) != mControlData.end())
+        mControlData.erase(target);
+    }
+
+    size_t CountStatusData() const
+    {
+      const std::lock_guard<std::mutex> owner(mAccess);
+      return mStatusData.size();
+    }
+
+    size_t CountControlData() const
+    {
+      const std::lock_guard<std::mutex> owner(mAccess);
+      return mControlData.size();
+    }
+
   private: // Private functions without own locks
+
+    void AssertUniqueId(const std::string& arId) const
+    {
+      if ((mStatusData.find(arId) != mStatusData.cend()) ||
+        (mControlData.find(arId) != mControlData.cend()))
+      {
+        throw std::invalid_argument("Cannot handle registration request. Data with the same id is registered already.");
+      }
+    }
+
     bool CheckPreconditions(const Iec104ServerParameter& arSettings)
     {
       if (!arSettings.mIpAddress.is_v4() && !arSettings.mIpAddress.is_v6())
@@ -70,7 +125,36 @@ namespace TC
       return (mId == requestedServerId);
     }
 
+    bool ProcessServerId(IMasterConnection apConnection, CS101_ASDU apAsdu)
+    {
+      if (!IsRequestForOwnId(apAsdu))
+      {
+        CS101_ASDU_setCOT(apAsdu, CS101_COT_UNKNOWN_CA);
+        CS101_ASDU_setNegative(apAsdu, true);
+        IMasterConnection_sendASDU(apConnection, apAsdu);
+        return false;
+      }
+      return true;
+    }
+
   private: // Private functions with own locks
+         
+    void RegisterInternal(const TC::BasePropertyList& arDefinition, DataMap& arDestination)
+    {
+      SpDataPtr spNewData = IEC104::DataFactory::Create(arDefinition);
+
+      if (!spNewData)
+        throw std::runtime_error("Failed to create new data point.");
+
+      const std::string dataId = spNewData->GetId();
+
+      {
+        const std::lock_guard<std::mutex> owner(mAccess);
+        AssertUniqueId(dataId);
+        arDestination.insert(std::make_pair(dataId, std::move(spNewData)));
+      }
+    }
+
     bool OnConnectRequest(const std::string& arIpAdress) noexcept
     {
       return true;
@@ -91,18 +175,6 @@ namespace TC
       }
 
       // TODO
-    }
-
-    bool ProcessServerId(IMasterConnection apConnection, CS101_ASDU apAsdu)
-    {
-      if (!IsRequestForOwnId(apAsdu))
-      {
-        CS101_ASDU_setCOT(apAsdu, CS101_COT_UNKNOWN_CA);
-        CS101_ASDU_setNegative(apAsdu, true);
-        IMasterConnection_sendASDU(apConnection, apAsdu);
-        return false;
-      }
-      return true;
     }
 
     bool OnInterrogation(IMasterConnection apConnection, CS101_ASDU apAsdu, uint8_t aQoi) noexcept
@@ -174,6 +246,9 @@ namespace TC
   private:
     CS104_Slave mpSlave;
     uint16_t mId;
+    DataMap mStatusData;
+    DataMap mControlData;
+
     mutable std::mutex mAccess;
   };
 
@@ -202,21 +277,33 @@ namespace TC
   }
 
   void 
-  Iec104Server::RegisterControlData(const std::string& arId, const BasePropertyList& arDefinition)
+  Iec104Server::RegisterControlData(const TC::BasePropertyList& arDefinition)
   {
-
+    mpImpl->RegisterControlData(arDefinition);
   }
 
   void
-  Iec104Server::RegisterStatusData(const std::string& arId, const BasePropertyList& arDefinition)
+  Iec104Server::RegisterStatusData(const TC::BasePropertyList& arDefinition)
   {
-
+    mpImpl->RegisterStatusData(arDefinition);
   }
 
   void
-  Iec104Server::UnregisterDatapoint(const std::string& arId)
+  Iec104Server::UnregisterData(const std::string& arId)
   {
+    mpImpl->UnregisterData(arId);
+  }
 
+  size_t
+  Iec104Server::CountStatusData() const
+  {
+    return mpImpl->CountStatusData();
+  }
+
+  size_t
+  Iec104Server::CountControlData() const
+  {
+    return mpImpl->CountControlData();
   }
 
 

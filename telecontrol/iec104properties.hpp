@@ -14,11 +14,11 @@ extern "C"
 #include "cs101_information_objects.h"
 }
 
-namespace TC
+namespace IEC104
 {
   using TypeIdEnum = UTIL::Enum<TypeID>;
   
-  class Iec104DataDefinition : public BasePropertyList
+  class Iec104DataDefinition : public TC::BasePropertyList
   {
     using PropertyMap = std::unordered_map<std::string, std::string>;
 

@@ -29,7 +29,7 @@ class IecTestClient
 public:
 
   IecTestClient()
-    : mpMaster(CS104_Connection_create("127.0.0.1", TC::Iec104ServerParameter::msDefaultServerPort))
+    : mpMaster(CS104_Connection_create("127.0.0.1", IEC104::Iec104ServerParameter::msDefaultServerPort))
   {
     CS104_Connection_setASDUReceivedHandler(mpMaster, &IecTestClient::sGlobalAsduReceive, this);
   }

@@ -14,20 +14,23 @@ namespace TC
 {
   struct BaseServerParameter
   {
-   BaseServerParameter(const boost::asio::ip::address& aIp, uint16_t aPort)
+    BaseServerParameter(const boost::asio::ip::address& aIp, uint16_t aPort)
       : mIpAddress(aIp), mPort(aPort) {}
 
-   virtual ~BaseServerParameter() {}
+    virtual ~BaseServerParameter() {}
 
   public:
     boost::asio::ip::address mIpAddress;
     uint16_t mPort;
   };
+}
 
-  struct Iec104ServerParameter : public BaseServerParameter
+namespace IEC104
+{
+  struct Iec104ServerParameter : public TC::BaseServerParameter
   {
    Iec104ServerParameter(const boost::asio::ip::address& aIp, uint16_t aPort, uint16_t aServerId)
-      : BaseServerParameter(aIp, aPort),
+      : TC::BaseServerParameter(aIp, aPort),
         mId(aServerId) {}
 
    virtual ~Iec104ServerParameter() {}
