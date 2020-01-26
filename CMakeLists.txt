@@ -11,6 +11,7 @@ add_library( vrtu STATIC
              telecontrol/iec104server.cpp
              telecontrol/basepropertylist.cpp
              telecontrol/iec104properties.cpp
+             telecontrol/iec104data.cpp
            )
 
 target_include_directories( vrtu PUBLIC
