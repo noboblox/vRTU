@@ -129,7 +129,7 @@ namespace IEC104
   {
   public:
     
-    DoublePointStatus(size_t arId)
+    DoublePointStatus(int arId)
       : BaseData(std::to_string(arId), TypeIdEnum(M_DP_NA_1).GetString()),
         mpHandle(DoublePointInformation_create(nullptr, arId, IEC60870_DOUBLE_POINT_INDETERMINATE, IEC60870_QUALITY_INVALID))
     {      
@@ -153,12 +153,12 @@ namespace IEC104
       return false;
     }
 
-    virtual bool UpdateTimestamp(const std::string& arUpdate)
+    virtual bool UpdateTimestamp(const std::string& arUpdate) override
     {
       return false; // TODO
     }
 
-    virtual bool UpdateQuality(const std::string& arUpdate)
+    virtual bool UpdateQuality(const std::string& arUpdate) override
     {
       return false; // TODO
     }

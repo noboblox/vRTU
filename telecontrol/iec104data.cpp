@@ -1,6 +1,6 @@
 #include "iec104data.hpp"
 
-#include <limits>
+#include <climits>
 
 #include "iec104properties.hpp"
 
@@ -19,7 +19,7 @@ namespace IEC104
     DataFactory::Create(const TC::BasePropertyList& arDefinition, size_t aIoaByte)
   {
     const Iec104DataDefinition& rDefinition = dynamic_cast<const Iec104DataDefinition&> (arDefinition);
-    const size_t dataId(rDefinition.GetInt(Iec104DataDefinition::csDataId));
+    const int dataId(rDefinition.GetInt(Iec104DataDefinition::csDataId));
     const TypeIdEnum typeId(rDefinition.GetString(Iec104DataDefinition::csTypeId));
     
     DataFactory::VerifyRange(dataId, aIoaByte);
