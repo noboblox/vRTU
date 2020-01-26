@@ -2,6 +2,8 @@
 #define TC_BASEPROPERTYLIST_HPP_
 
 #include <string>
+#include <unordered_map>
+
 #include "enumtype.hpp"
 
 namespace TC
@@ -9,6 +11,9 @@ namespace TC
   class BasePropertyList
   {
   public:
+    static constexpr const char* csTrue = "true";
+    static constexpr const char* csFalse = "false";
+    
     virtual ~BasePropertyList();
 
     /// pure virtual
@@ -29,10 +34,18 @@ namespace TC
     {
       return UTIL::Enum<PlainEnumT> (GetString(arKey, aAllowDefault));
     }
-
-  protected:
-    static constexpr const char* csTrue = "true";
-    static constexpr const char* csFalse = "false";
   };
+
+  class BaseDataPropertyList : public BasePropertyList
+  {
+    using PropertyMap = std::unordered_map<std::string, std::string>;
+
+  public:
+    static constexpr const char* csValue = "Value";
+    static constexpr const char* csTimestamp = "Timestamp";
+    static constexpr const char* csQuality = "Quality";
+
+  };
+
 }
 #endif // TC_BASEPROPERTYLIST_HPP_

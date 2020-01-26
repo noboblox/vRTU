@@ -32,6 +32,8 @@ namespace IEC104
     virtual void StartServer() override;
     virtual void StopServer() override;
 
+    virtual void UpdateStatusData(const std::string& arId, const TC::BaseDataPropertyList& arUpdate);
+
   private:
     Iec104ServerImpl* mpImpl;
   };

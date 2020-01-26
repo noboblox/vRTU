@@ -110,7 +110,7 @@ UTIL::Enum<Test>::EnumDefinition const UTIL::Enum<Test>::msDefinition
   BOOST_AUTO_TEST_CASE(ShallSucceedRegisterServerData)
   {
     const IEC104::TypeIdEnum stateType(M_DP_NA_1);
-    const IEC104::TypeIdEnum controlType(C_DC_NA_1);
+    const IEC104::TypeIdEnum controlType(M_DP_NA_1); // TODO: Implement control types
 
     const long dataId1 = 0x030044;
     const long dataId2 = 0x020044;

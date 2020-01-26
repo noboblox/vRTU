@@ -23,8 +23,6 @@ extern "C"
 
 namespace IEC104
 {
-  class BaseIec104Data;
-
   class Iec104ServerImpl
   {
   public:
@@ -98,6 +96,24 @@ namespace IEC104
       return mControlData.size();
     }
 
+    void UpdateStatusData(const std::string& arId, const TC::BaseDataPropertyList& arUpdate)
+    {
+      SpDataPtr pTarget = nullptr;
+
+      {
+        const std::lock_guard<std::mutex> owner(mAccess);
+
+        DataMap::iterator target = mStatusData.find(arId);
+
+        if (target == mStatusData.end())
+          throw std::invalid_argument("Cannot update. Data does not exist.");
+
+        pTarget = target->second;
+      } // unlock
+      
+      pTarget->Update(arUpdate);
+    }
+
   private: // Private functions without own locks
 
     void AssertUniqueId(const std::string& arId) const
@@ -141,7 +157,8 @@ namespace IEC104
          
     void RegisterInternal(const TC::BasePropertyList& arDefinition, DataMap& arDestination)
     {
-      SpDataPtr spNewData = IEC104::DataFactory::Create(arDefinition);
+      const CS101_AppLayerParameters pParam = CS104_Slave_getAppLayerParameters(mpSlave);
+      SpDataPtr spNewData = IEC104::DataFactory::Create(arDefinition, pParam->sizeOfIOA);
 
       if (!spNewData)
         throw std::runtime_error("Failed to create new data point.");
@@ -304,6 +321,12 @@ namespace IEC104
   Iec104Server::CountControlData() const
   {
     return mpImpl->CountControlData();
+  }
+
+  void
+  Iec104Server::UpdateStatusData(const std::string& arId, const TC::BaseDataPropertyList& arUpdate)
+  {
+    mpImpl->UpdateStatusData(arId, arUpdate);
   }
 
 
