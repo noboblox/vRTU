@@ -13,6 +13,7 @@ add_library( vrtu STATIC
              telecontrol/iec104properties.cpp
              telecontrol/iec104data.cpp
              telecontrol/staticenums.cpp
+             telecontrol/iec104quality.cpp
            )
 
 target_include_directories( vrtu PUBLIC

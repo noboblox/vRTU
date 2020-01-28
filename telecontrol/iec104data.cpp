@@ -3,6 +3,7 @@
 #include <climits>
 
 #include "iec104properties.hpp"
+#include "iec104quality.hpp"
 
 namespace IEC104
 {
@@ -84,6 +85,7 @@ namespace IEC104
       const int myId = std::stoi(GetId());
       const QualityDescriptor oldQuality = DoublePointInformation_getQuality(mpHandle.Get());
       DoublePointInformation_create(mpHandle.Get(), myId, newValue.GetValue(), oldQuality);
+      return true;
     }
     return false;
   }
@@ -91,7 +93,25 @@ namespace IEC104
   bool
   DoublePointStatus::UpdateQuality(const std::string& arUpdate)
   {
-    return false; // TODO
+    Quality newQuality(arUpdate);
+    Quality oldQuality(DoublePointInformation_getQuality(mpHandle.Get()));
+
+    if (newQuality != oldQuality)
+    {
+      const int myID = std::stoi(GetId());
+      DoublePointValue savedValue = DoublePointInformation_getValue(mpHandle.Get());
+
+      DoublePointInformation_create(mpHandle.Get(), myID, savedValue, newQuality.GetInt());
+      return true;
+    }
+    return false;
+  }
+
+  std::string
+  DoublePointStatus::GetValue() const
+  {
+    DoublePointValue value = DoublePointInformation_getValue(mpHandle.Get());
+    return EnumPosition(value).GetString();
   }
 
   DoublePointStatusTime24::DoublePointStatusTime24(int arId)

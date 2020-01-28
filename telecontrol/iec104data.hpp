@@ -9,6 +9,7 @@
 #include "iec104properties.hpp"
 #include "iec104smartpointer.hpp"
 #include "staticenums.hpp"
+#include "iec104quality.hpp"
 
 extern "C"
 {
@@ -36,6 +37,11 @@ namespace IEC104
     virtual bool UpdateValue(const std::string& arUpdate) = 0;
     virtual bool UpdateTimestamp(const std::string& arUpdate) {return false;}
     virtual bool UpdateQuality(const std::string& arUpdate) {return false;}
+
+    // TODO: virtual TC::BaseDataPropertyList GetData() const = 0;
+    virtual std::string GetValue() const = 0;
+    virtual std::string GetQuality() const { return ""; }
+    virtual std::string GetTimestamp() const   { return ""; }
 
     BaseData(const BaseData& arOther) = delete;
     BaseData(BaseData&& arOther) = delete;
@@ -77,6 +83,8 @@ namespace IEC104
 
     virtual bool UpdateValue(const std::string& arUpdate) override;
     virtual bool UpdateQuality(const std::string& arUpdate) override;
+
+    virtual std::string GetValue() const override;
 
   protected:
     DoublePointStatus(int arId, const std::string& arType); // Constructor for child classes
