@@ -9,8 +9,11 @@
 #define BOOST_TEST_MODULE TestTelecontrol
 
 #include <boost/test/unit_test.hpp>
+
+#include "staticenums.hpp"
 #include "iec104server.hpp"
 #include "iec104properties.hpp"
+#include "iec104data.hpp"
 #include "enumtype.hpp"
 #include "mock_testclient.hpp"
 
@@ -55,7 +58,6 @@ enum Test
   TWO = 2,
   THREE = 3
 };
-
 template<>
 UTIL::Enum<Test>::EnumDefinition const UTIL::Enum<Test>::msDefinition
 {
@@ -110,7 +112,7 @@ UTIL::Enum<Test>::EnumDefinition const UTIL::Enum<Test>::msDefinition
   BOOST_AUTO_TEST_CASE(ShallSucceedRegisterServerData)
   {
     const IEC104::TypeIdEnum stateType(M_DP_NA_1);
-    const IEC104::TypeIdEnum controlType(M_DP_NA_1); // TODO: Implement control types
+    const IEC104::TypeIdEnum controlType(M_DP_TA_1); // TODO: Implement control types
 
     const long dataId1 = 0x030044;
     const long dataId2 = 0x020044;
@@ -134,5 +136,33 @@ UTIL::Enum<Test>::EnumDefinition const UTIL::Enum<Test>::msDefinition
     BOOST_CHECK_EQUAL(server.CountControlData(), 0);
   }
 
+  BOOST_AUTO_TEST_CASE(SpInfoObjectPointerShallPreventMemoryLeaks)
+  {
+    {
+      IEC104::SpInfoObjectPointer<DoublePointInformation> pDoublePoint(DoublePointInformation_create(nullptr, 1234, IEC60870_DOUBLE_POINT_INDETERMINATE, IEC60870_QUALITY_GOOD));
+    } // Shall free()
+
+    {
+      IEC104::SpInfoObjectPointer<DoublePointInformation> pDoublePoint(DoublePointInformation_create(nullptr, 1234, IEC60870_DOUBLE_POINT_INDETERMINATE, IEC60870_QUALITY_GOOD));
+      pDoublePoint.Reset(DoublePointInformation_create(nullptr, 5678, IEC60870_DOUBLE_POINT_INDETERMINATE, IEC60870_QUALITY_GOOD)); // Shall free() old and own new
+    } // Shall free() new
+
+    {
+      IEC104::SpInfoObjectPointer<DoublePointInformation> pDoublePoint(DoublePointInformation_create(nullptr, 1234, IEC60870_DOUBLE_POINT_INDETERMINATE, IEC60870_QUALITY_GOOD));
+      DoublePointInformation pRaw = pDoublePoint.Release(); // Release ownership
+      DoublePointInformation_destroy(pRaw); // Shall free
+    } // Shall not call free() again
+
+#   if 0 // Shall not compile
+    {
+      IEC104::SpInfoObjectPointer<DoublePointInformation> pDoublePoint(DoublePointInformation_create(nullptr, 1234, IEC60870_DOUBLE_POINT_INDETERMINATE, IEC60870_QUALITY_GOOD));
+      IEC104::SpInfoObjectPointer<DoublePointInformation> pCopy(pDoublePoint);
+    }
+#   endif
+    {
+      IEC104::SpInfoObjectPointer<DoublePointInformation> pDoublePoint(DoublePointInformation_create(nullptr, 1234, IEC60870_DOUBLE_POINT_INDETERMINATE, IEC60870_QUALITY_GOOD));
+      IEC104::SpInfoObjectPointer<DoublePointInformation> pMove(std::move(pDoublePoint));
+    } // pMove calls free()
+  }
 
 

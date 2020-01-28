@@ -158,7 +158,8 @@ namespace IEC104
     void RegisterInternal(const TC::BasePropertyList& arDefinition, DataMap& arDestination)
     {
       const CS101_AppLayerParameters pParam = CS104_Slave_getAppLayerParameters(mpSlave);
-      SpDataPtr spNewData = IEC104::DataFactory::Create(arDefinition, pParam->sizeOfIOA);
+      DataFactory factory(pParam->sizeOfIOA);
+      SpDataPtr spNewData = factory.Create(arDefinition);
 
       if (!spNewData)
         throw std::runtime_error("Failed to create new data point.");
