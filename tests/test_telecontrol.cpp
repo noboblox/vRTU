@@ -15,6 +15,7 @@
 #include "iec104properties.hpp"
 #include "iec104data.hpp"
 #include "enumtype.hpp"
+#include "iec104quality.hpp"
 #include "mock_testclient.hpp"
 
 BOOST_AUTO_TEST_CASE(ShallSucceedConstructServer)
@@ -164,5 +165,83 @@ UTIL::Enum<Test>::EnumDefinition const UTIL::Enum<Test>::msDefinition
       IEC104::SpInfoObjectPointer<DoublePointInformation> pMove(std::move(pDoublePoint));
     } // pMove calls free()
   }
+
+  BOOST_AUTO_TEST_CASE(CheckQualityFlagMapping)
+  {
+    BOOST_CHECK_EQUAL(IEC60870_QUALITY_GOOD,                 IEC104::Quality("good").GetInt());
+    BOOST_CHECK_EQUAL(IEC60870_QUALITY_BLOCKED,              IEC104::Quality("blocked").GetInt());
+    BOOST_CHECK_EQUAL(IEC60870_QUALITY_ELAPSED_TIME_INVALID, IEC104::Quality("timeout").GetInt());
+    BOOST_CHECK_EQUAL(IEC60870_QUALITY_INVALID,              IEC104::Quality("invalid").GetInt());
+    BOOST_CHECK_EQUAL(IEC60870_QUALITY_NON_TOPICAL,          IEC104::Quality("non-topical").GetInt());
+    BOOST_CHECK_EQUAL(IEC60870_QUALITY_OVERFLOW,             IEC104::Quality("overflow").GetInt());
+    BOOST_CHECK_EQUAL(IEC60870_QUALITY_RESERVED,             IEC104::Quality("reserved").GetInt());
+    BOOST_CHECK_EQUAL(IEC60870_QUALITY_SUBSTITUTED,          IEC104::Quality("substituted").GetInt());
+
+    BOOST_CHECK_THROW(IEC104::Quality("garbage"), std::invalid_argument);
+
+    IEC104::Quality testQuality;
+    BOOST_CHECK_EQUAL(testQuality.GetInt(), IEC60870_QUALITY_INVALID);
+    testQuality.SetToGood();
+    BOOST_CHECK_EQUAL(testQuality.GetInt(), IEC60870_QUALITY_GOOD);
+
+    testQuality.EditFlagBlocked(true);
+    BOOST_CHECK_EQUAL(testQuality.GetInt(), IEC60870_QUALITY_BLOCKED);
+    
+    testQuality.EditFlagTimeout(true);
+    BOOST_CHECK_EQUAL(testQuality.GetInt(), IEC60870_QUALITY_BLOCKED | IEC60870_QUALITY_ELAPSED_TIME_INVALID);
+    
+    testQuality.EditFlagInvalid(true);
+    BOOST_CHECK_EQUAL(testQuality.GetInt(), IEC60870_QUALITY_BLOCKED | IEC60870_QUALITY_ELAPSED_TIME_INVALID | IEC60870_QUALITY_INVALID);
+    
+    testQuality.EditFlagNonTopical(true);
+    BOOST_CHECK_EQUAL(testQuality.GetInt(), IEC60870_QUALITY_BLOCKED | IEC60870_QUALITY_ELAPSED_TIME_INVALID | IEC60870_QUALITY_INVALID |
+                                            IEC60870_QUALITY_NON_TOPICAL);
+    
+    testQuality.EditFlagOverflow(true);
+    BOOST_CHECK_EQUAL(testQuality.GetInt(), IEC60870_QUALITY_BLOCKED | IEC60870_QUALITY_ELAPSED_TIME_INVALID | IEC60870_QUALITY_INVALID |
+                                            IEC60870_QUALITY_NON_TOPICAL | IEC60870_QUALITY_OVERFLOW);
+    
+    testQuality.EditFlagReserved(true);
+    BOOST_CHECK_EQUAL(testQuality.GetInt(), IEC60870_QUALITY_BLOCKED | IEC60870_QUALITY_ELAPSED_TIME_INVALID | IEC60870_QUALITY_INVALID |
+                                            IEC60870_QUALITY_NON_TOPICAL | IEC60870_QUALITY_OVERFLOW | IEC60870_QUALITY_RESERVED);
+    
+    testQuality.EditFlagSubstituted(true);
+    BOOST_CHECK_EQUAL(testQuality.GetInt(), IEC60870_QUALITY_BLOCKED | IEC60870_QUALITY_ELAPSED_TIME_INVALID | IEC60870_QUALITY_INVALID |
+                                            IEC60870_QUALITY_NON_TOPICAL | IEC60870_QUALITY_OVERFLOW | IEC60870_QUALITY_RESERVED |
+                                            IEC60870_QUALITY_SUBSTITUTED);
+
+    testQuality.EditFlagBlocked(false);
+    BOOST_CHECK_EQUAL(testQuality.GetInt(), IEC60870_QUALITY_ELAPSED_TIME_INVALID | IEC60870_QUALITY_INVALID | IEC60870_QUALITY_NON_TOPICAL |
+                                            IEC60870_QUALITY_OVERFLOW | IEC60870_QUALITY_RESERVED | IEC60870_QUALITY_SUBSTITUTED);
+    testQuality.EditFlagTimeout(false);
+    BOOST_CHECK_EQUAL(testQuality.GetInt(), IEC60870_QUALITY_INVALID | IEC60870_QUALITY_NON_TOPICAL | IEC60870_QUALITY_OVERFLOW |
+                                            IEC60870_QUALITY_RESERVED |IEC60870_QUALITY_SUBSTITUTED);
+
+    testQuality.EditFlagInvalid(false);
+    BOOST_CHECK_EQUAL(testQuality.GetInt(), IEC60870_QUALITY_NON_TOPICAL | IEC60870_QUALITY_OVERFLOW | IEC60870_QUALITY_RESERVED |
+      IEC60870_QUALITY_SUBSTITUTED);
+
+    testQuality.EditFlagNonTopical(false);
+    BOOST_CHECK_EQUAL(testQuality.GetInt(), IEC60870_QUALITY_OVERFLOW | IEC60870_QUALITY_RESERVED | IEC60870_QUALITY_SUBSTITUTED);
+
+    testQuality.EditFlagOverflow(false);
+    BOOST_CHECK_EQUAL(testQuality.GetInt(), IEC60870_QUALITY_RESERVED | IEC60870_QUALITY_SUBSTITUTED);
+
+    testQuality.EditFlagReserved(false);
+    BOOST_CHECK_EQUAL(testQuality.GetInt(), IEC60870_QUALITY_SUBSTITUTED);
+
+    testQuality.EditFlagSubstituted(false);
+    BOOST_CHECK_EQUAL(testQuality.GetInt(), IEC60870_QUALITY_GOOD);
+
+    IEC104::Quality good(IEC60870_QUALITY_GOOD);
+    BOOST_CHECK_EQUAL(good.IsGood(), true);
+    BOOST_CHECK_EQUAL(good.IsInvalid(), false);
+
+    IEC104::Quality good2("good");
+    BOOST_CHECK_EQUAL(good == good2, true);
+    good2.EditFlagInvalid(true);
+    BOOST_CHECK_EQUAL(good != good2, true);
+  }
+
 
 

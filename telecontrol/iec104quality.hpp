@@ -40,13 +40,13 @@ namespace IEC104
     inline bool IsInvalid()     const { return mFlags  & sFlagInvalid; }
 
     inline void SetToGood()                      { mFlags = sValueGood; }
-    inline void EditFlagOverflow(bool aValue)    { mFlags &= ( (~sFlagOverflow)    | (aValue * uint8_t(0xFF)) ); }
-    inline void EditFlagReserved(bool aValue)    { mFlags &= ( (~sFlagReserved)    | (aValue * uint8_t(0xFF)) ); }
-    inline void EditFlagTimeout(bool aValue)     { mFlags &= ( (~sFlagTimeout)     | (aValue * uint8_t(0xFF)) ); }
-    inline void EditFlagBlocked(bool aValue)     { mFlags &= ( (~sFlagBlocked)     | (aValue * uint8_t(0xFF)) ); }
-    inline void EditFlagSubstituted(bool aValue) { mFlags &= ( (~sFlagSubstituted) | (aValue * uint8_t(0xFF)) ); }
-    inline void EditFlagNonTopical(bool aValue)  { mFlags &= ( (~sFlagNonTopical)  | (aValue * uint8_t(0xFF)) ); }
-    inline void EditFlagInvalid(bool aValue)     { mFlags &= ( (~sFlagInvalid)     | (aValue * uint8_t(0xFF)) ); }
+    inline void EditFlagOverflow(bool aValue)    { aValue ? mFlags |= sFlagOverflow    : mFlags &= (~sFlagOverflow);    }
+    inline void EditFlagReserved(bool aValue)    { aValue ? mFlags |= sFlagReserved    : mFlags &= (~sFlagReserved);    }
+    inline void EditFlagTimeout(bool aValue)     { aValue ? mFlags |= sFlagTimeout     : mFlags &= (~sFlagTimeout);     }
+    inline void EditFlagBlocked(bool aValue)     { aValue ? mFlags |= sFlagBlocked     : mFlags &= (~sFlagBlocked);     }
+    inline void EditFlagSubstituted(bool aValue) { aValue ? mFlags |= sFlagSubstituted : mFlags &= (~sFlagSubstituted); }
+    inline void EditFlagNonTopical(bool aValue)  { aValue ? mFlags |= sFlagNonTopical  : mFlags &= (~sFlagNonTopical);  }
+    inline void EditFlagInvalid(bool aValue)     { aValue ? mFlags |= sFlagInvalid     : mFlags &= (~sFlagInvalid);     }
 
     inline uint8_t GetInt() const { return mFlags; }
 
