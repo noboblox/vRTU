@@ -249,9 +249,7 @@ UTIL::Enum<Test>::EnumDefinition const UTIL::Enum<Test>::msDefinition
     IEC104::DataFactory factory(ioaSize);
 
     const IEC104::Iec104DataDefinition defDoublePointNoTimestamp(IEC104::TypeIdEnum(M_DP_NA_1), 1234);
-    const IEC104::Iec104DataDefinition defDoublePointTime24(IEC104::TypeIdEnum(M_DP_TA_1), 1235);
 
-    auto spDoublePointTime24 = factory.Create(defDoublePointTime24);
     
     auto spDoublePoint = factory.Create(defDoublePointNoTimestamp);
     BOOST_CHECK_EQUAL(spDoublePoint->GetTypeString(), "M_DP_NA_1");
@@ -259,6 +257,16 @@ UTIL::Enum<Test>::EnumDefinition const UTIL::Enum<Test>::msDefinition
     BOOST_CHECK_EQUAL(spDoublePoint->GetValue(), "faulty");
     BOOST_CHECK_EQUAL(spDoublePoint->GetQuality(), "invalid");
     BOOST_CHECK_EQUAL(spDoublePoint->GetTimestamp(), "");
+
+    IEC104::SpBaseInformation pNative(spDoublePoint->Write());
+    BOOST_CHECK_EQUAL(DoublePointInformation_getValue(reinterpret_cast<DoublePointInformation>(pNative.Get())), IEC60870_DOUBLE_POINT_INDETERMINATE);
+    BOOST_CHECK_EQUAL(DoublePointInformation_getQuality(reinterpret_cast<DoublePointInformation>(pNative.Get())), IEC60870_QUALITY_INVALID);
+    BOOST_CHECK_EQUAL(InformationObject_getType(pNative.Get()), M_DP_NA_1);
+    BOOST_CHECK_EQUAL(InformationObject_getObjectAddress(pNative.Get()), 1234);
+
+    const IEC104::Iec104DataDefinition defDoublePointTime24(IEC104::TypeIdEnum(M_DP_TA_1), 1235);
+    auto spDoublePointTime24 = factory.Create(defDoublePointTime24);
+    // TODO
   }
 
 

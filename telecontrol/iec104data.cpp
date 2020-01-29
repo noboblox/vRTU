@@ -75,26 +75,21 @@ namespace IEC104
 
   DoublePointStatus::DoublePointStatus(int arId)
     : BaseData(std::to_string(arId), TypeIdEnum(M_DP_NA_1).GetString()),
-      mpHandle(DoublePointInformation_create(nullptr, arId, IEC60870_DOUBLE_POINT_INDETERMINATE,
-                                             IEC60870_QUALITY_INVALID))
-  {
-  }
+      mValue(IEC60870_DOUBLE_POINT_INDETERMINATE),
+      mQuality() {}
 
   DoublePointStatus::DoublePointStatus(int arId, const std::string& arType)
     : BaseData(std::to_string(arId), arType),
-      mpHandle(nullptr) {}
+      mValue(IEC60870_DOUBLE_POINT_INDETERMINATE),
+      mQuality() {}
 
   bool
   DoublePointStatus::UpdateValue(const std::string& arUpdate)
   {
     EnumPosition newValue(arUpdate);
-    EnumPosition oldValue(DoublePointInformation_getValue(mpHandle.Get()));
-
-    if (oldValue != newValue)
+    if (mValue != newValue)
     {
-      const int myId = std::stoi(GetId());
-      const QualityDescriptor oldQuality = DoublePointInformation_getQuality(mpHandle.Get());
-      DoublePointInformation_create(mpHandle.Get(), myId, newValue.GetValue(), oldQuality);
+      mValue = newValue;
       return true;
     }
     return false;
@@ -104,14 +99,9 @@ namespace IEC104
   DoublePointStatus::UpdateQuality(const std::string& arUpdate)
   {
     Quality newQuality(arUpdate);
-    Quality oldQuality(DoublePointInformation_getQuality(mpHandle.Get()));
-
-    if (newQuality != oldQuality)
+    if (mQuality != newQuality)
     {
-      const int myID = std::stoi(GetId());
-      DoublePointValue savedValue = DoublePointInformation_getValue(mpHandle.Get());
-
-      DoublePointInformation_create(mpHandle.Get(), myID, savedValue, newQuality.GetInt());
+      mQuality = newQuality;
       return true;
     }
     return false;
@@ -120,45 +110,46 @@ namespace IEC104
   std::string
   DoublePointStatus::GetValue() const
   {
-    DoublePointValue value = DoublePointInformation_getValue(mpHandle.Get());
-    return EnumPosition(value).GetString();
-  }
-
-  DoublePointStatusTime24::DoublePointStatusTime24(int arId)
-    : DoublePointStatus(arId, IEC104::TypeIdEnum(M_DP_TA_1).GetString())
-  {
-    sCP24Time2a empty{};
-    mpHandle = SpDoublePointBase(reinterpret_cast<DoublePointInformation>(
-    DoublePointWithCP24Time2a_create(nullptr, arId, IEC60870_DOUBLE_POINT_INDETERMINATE,
-                                     IEC60870_QUALITY_INVALID, &empty)));
+    return mValue.GetString();
   }
 
   std::string
   DoublePointStatus::GetQuality() const
   {
-    Quality result(DoublePointInformation_getQuality(mpHandle.Get()));
-    return result.GetString();
+    return mQuality.GetString();
+  }
+
+  SpBaseInformation
+  DoublePointStatus::Write() const
+  {
+    const int ioa = std::stoi(GetId());
+    SpBaseInformation pNew(reinterpret_cast<InformationObject>(DoublePointInformation_create(nullptr, ioa, mValue.GetValue(), mQuality.GetInt())));
+    AssertTypeIdIntegrity(pNew.Get());
+    return std::move(pNew);
+  }
+
+  DoublePointStatusTime24::DoublePointStatusTime24(int arId)
+    : DoublePointStatus(arId, IEC104::TypeIdEnum(M_DP_TA_1).GetString())
+  {
+    sCP24Time2a empty{}; // TODO -> Member
   }
 
   bool
   DoublePointStatusTime24::UpdateTimestamp(const std::string& arUpdate)
   {
-    DoublePointWithCP24Time2a pHandle = reinterpret_cast<DoublePointWithCP24Time2a> (mpHandle.Get());
-    //TimeStamp newTime(arUpdate);
-    //TimeStamp oldTime(DoublePointWithCP24Time2a_getTimestamp(pHandle));
-
-    sCP24Time2a newTime = { 0xFA, 0x11, 0x35 };
-
-    //  if (newTime != oldTime)
-     // {
-    const int myID = std::stoi(GetId());
-    DoublePointValue savedValue = DoublePointInformation_getValue(mpHandle.Get());
-    QualityDescriptor savedQuality = DoublePointInformation_getQuality(mpHandle.Get());
-    DoublePointWithCP24Time2a_create(pHandle, myID, savedValue, savedQuality, &newTime);
-    //      }
-
-    return false;
+    return false; // TODO 
   }
 
+  std::string
+  DoublePointStatusTime24::GetTimestamp() const
+  {
+    return false; // TODO
+  }
+
+  SpBaseInformation
+  DoublePointStatusTime24::Write() const
+  {
+    return SpBaseInformation(nullptr); // TODO
+  }
 
 }

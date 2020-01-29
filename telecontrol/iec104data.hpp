@@ -25,6 +25,7 @@ namespace TC
 
 namespace IEC104
 {
+  using SpBaseInformation = SpInfoObjectPointer<InformationObject>;
   class BaseData
   {
   public:
@@ -42,6 +43,8 @@ namespace IEC104
     virtual std::string GetValue() const = 0;
     virtual std::string GetQuality() const { return ""; }
     virtual std::string GetTimestamp() const   { return ""; }
+
+    virtual SpBaseInformation Write() const = 0; //!< Writes the current internal state into an IEC-104 InformationObject. Must be overridden in each child class.
 
     BaseData(const BaseData& arOther) = delete;
     BaseData(BaseData&& arOther) = delete;
@@ -77,8 +80,6 @@ namespace IEC104
   class DoublePointStatus : public BaseData
   {
   public:
-    using SpDoublePointBase = SpInfoObjectPointer<DoublePointInformation>;
-
     DoublePointStatus(int arId);
     virtual ~DoublePointStatus() {}
 
@@ -88,9 +89,13 @@ namespace IEC104
     virtual std::string GetValue() const override;
     virtual std::string GetQuality() const override;
 
+    virtual SpBaseInformation Write() const override;
+
   protected:
     DoublePointStatus(int arId, const std::string& arType); // Constructor for child classes
-    SpDoublePointBase mpHandle; //!< Emulated base pointer as per lib60870 inheritance support
+
+    EnumPosition mValue;
+    Quality mQuality;
   };
 
 
@@ -100,6 +105,9 @@ namespace IEC104
     DoublePointStatusTime24(int arId);
 
     virtual bool UpdateTimestamp(const std::string& arUpdate) override;
+    virtual std::string GetTimestamp() const override;
+    
+    virtual SpBaseInformation Write() const override;
   };
 
 }
