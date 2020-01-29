@@ -50,6 +50,7 @@ namespace IEC104
 
   protected:
     explicit BaseData(const std::string& arId, const std::string& arType);
+    void AssertTypeIdIntegrity(InformationObject apCheckedIoa) const;
 
   private:
     std::string mId;
@@ -85,6 +86,7 @@ namespace IEC104
     virtual bool UpdateQuality(const std::string& arUpdate) override;
 
     virtual std::string GetValue() const override;
+    virtual std::string GetQuality() const override;
 
   protected:
     DoublePointStatus(int arId, const std::string& arType); // Constructor for child classes

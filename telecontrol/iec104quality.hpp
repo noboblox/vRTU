@@ -50,6 +50,8 @@ namespace IEC104
 
     inline uint8_t GetInt() const { return mFlags; }
 
+    std::string GetString() const;
+
     const bool operator==(const Quality& arOther) const { return mFlags == arOther.mFlags; }
     const bool operator!=(const Quality& arOther) const { return !operator==(arOther); }
 
@@ -73,6 +75,8 @@ namespace IEC104
     static constexpr const char* sStringSubstituted = "substituted";
     static constexpr const char* sStringNonTopical  = "non-topical";
     static constexpr const char* sStringInvalid     = "invalid";
+
+    static constexpr const char* sFlagSeparator = ",";
     
     using FlagMap = const std::map<const std::string, const uint8_t>;
   private:

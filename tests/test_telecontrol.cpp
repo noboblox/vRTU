@@ -243,5 +243,22 @@ UTIL::Enum<Test>::EnumDefinition const UTIL::Enum<Test>::msDefinition
     BOOST_CHECK_EQUAL(good != good2, true);
   }
 
+  BOOST_AUTO_TEST_CASE(TestDoublePointDataHierarchy)
+  {
+    const int ioaSize = 3;
+    IEC104::DataFactory factory(ioaSize);
+
+    const IEC104::Iec104DataDefinition defDoublePointNoTimestamp(IEC104::TypeIdEnum(M_DP_NA_1), 1234);
+    const IEC104::Iec104DataDefinition defDoublePointTime24(IEC104::TypeIdEnum(M_DP_TA_1), 1235);
+
+    auto spDoublePointTime24 = factory.Create(defDoublePointTime24);
+    
+    auto spDoublePoint = factory.Create(defDoublePointNoTimestamp);
+    BOOST_CHECK_EQUAL(spDoublePoint->GetTypeString(), "M_DP_NA_1");
+    BOOST_CHECK_EQUAL(spDoublePoint->GetId(), "1234");
+    BOOST_CHECK_EQUAL(spDoublePoint->GetValue(), "faulty");
+    BOOST_CHECK_EQUAL(spDoublePoint->GetQuality(), "invalid");
+    BOOST_CHECK_EQUAL(spDoublePoint->GetTimestamp(), "");
+  }
 
 

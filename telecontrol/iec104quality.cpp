@@ -1,5 +1,7 @@
 #include "iec104quality.hpp"
 
+#include <sstream>
+
 constexpr uint8_t IEC104::Quality::sValueGood;
 constexpr uint8_t IEC104::Quality::sFlagOverflow;
 constexpr uint8_t IEC104::Quality::sFlagReserved;
@@ -18,6 +20,8 @@ constexpr const char* IEC104::Quality::sStringSubstituted;
 constexpr const char* IEC104::Quality::sStringNonTopical;
 constexpr const char* IEC104::Quality::sStringInvalid;
 
+constexpr const char* IEC104::Quality::sFlagSeparator;
+
 IEC104::Quality::FlagMap IEC104::Quality::msFlagNames
 {
   { sStringOverflow,    sFlagOverflow },
@@ -28,3 +32,23 @@ IEC104::Quality::FlagMap IEC104::Quality::msFlagNames
   { sStringNonTopical,  sFlagNonTopical },
   { sStringInvalid,     sFlagInvalid }
 };
+
+std::string
+IEC104::Quality::GetString() const
+{
+  if (IsGood())
+    return sStringGood;
+
+  std::stringstream stream;
+  for (const auto& flag : msFlagNames)
+  {
+    if (flag.second & mFlags)
+      stream << flag.first << sFlagSeparator;
+  }
+  
+  std::string result = stream.str();
+  if (!result.empty())
+    result.pop_back();
+
+  return result;
+}

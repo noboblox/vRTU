@@ -49,6 +49,16 @@ namespace IEC104
   BaseData::~BaseData()
   {}
 
+  void
+  BaseData::AssertTypeIdIntegrity(InformationObject apCheckedObject) const
+  {
+    TypeIdEnum typeId(InformationObject_getType(apCheckedObject));
+    if (typeId.GetString() != GetTypeString())
+    {
+      throw std::runtime_error("Critical error: IEC 104 type id mismatch. Stored type differs from the type used in external communication.");
+    }
+  }
+
   bool
   BaseData::Update(const TC::BaseDataPropertyList& arUpdate)
   {
@@ -121,6 +131,13 @@ namespace IEC104
     mpHandle = SpDoublePointBase(reinterpret_cast<DoublePointInformation>(
     DoublePointWithCP24Time2a_create(nullptr, arId, IEC60870_DOUBLE_POINT_INDETERMINATE,
                                      IEC60870_QUALITY_INVALID, &empty)));
+  }
+
+  std::string
+  DoublePointStatus::GetQuality() const
+  {
+    Quality result(DoublePointInformation_getQuality(mpHandle.Get()));
+    return result.GetString();
   }
 
   bool
