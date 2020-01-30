@@ -8,7 +8,7 @@
 namespace IEC104
 {
   SpDataPtr
-    DataFactory::Create(const TC::BasePropertyList& arDefinition) const
+  DataFactory::Create(const TC::BasePropertyList& arDefinition) const
   {
     const Iec104DataDefinition& rDefinition = dynamic_cast<const Iec104DataDefinition&> (arDefinition);
     const int dataId(rDefinition.GetInt(Iec104DataDefinition::csDataId));
@@ -143,7 +143,7 @@ namespace IEC104
   std::string
   DoublePointStatusTime24::GetTimestamp() const
   {
-    return false; // TODO
+    return ""; // TODO
   }
 
   SpBaseInformation
