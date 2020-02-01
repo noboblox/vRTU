@@ -22,3 +22,4 @@ addons:
     packages:
     - libboost-system-dev
     - libboost-test-dev
+    - libboost-date-time-dev
