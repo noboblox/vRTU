@@ -8,10 +8,11 @@ namespace IEC104
   constexpr const char* Iec104DataDefinition::csDataId;
    
   Iec104DataDefinition::Iec104DataDefinition(const TypeIdEnum& arTypeId, long aDataId)
-    : BasePropertyList(),
-      mProperties{ {csTypeId, arTypeId.GetString()},
-                   {csDataId, std::to_string(aDataId)} }
-  {}
+    : BasePropertyList()
+  {
+    mProperties.insert({ csTypeId, arTypeId.GetString() });
+    mProperties.insert({ csDataId, std::to_string(aDataId) });
+  }
   
   Iec104DataDefinition::~Iec104DataDefinition() {}
 

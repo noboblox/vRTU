@@ -5,7 +5,6 @@
  *      Author: Rene Buettgen
  */
 
-#define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE TestTelecontrol
 
 #include <boost/test/unit_test.hpp>
@@ -16,6 +15,7 @@
 #include "iec104data.hpp"
 #include "enumtype.hpp"
 #include "iec104quality.hpp"
+#include "iec104timestamp.hpp"
 #include "mock_testclient.hpp"
 
 BOOST_AUTO_TEST_CASE(ShallSucceedConstructServer)
@@ -113,7 +113,7 @@ UTIL::Enum<Test>::EnumDefinition const UTIL::Enum<Test>::msDefinition
   BOOST_AUTO_TEST_CASE(ShallSucceedRegisterServerData)
   {
     const IEC104::TypeIdEnum stateType(M_DP_NA_1);
-    const IEC104::TypeIdEnum controlType(M_DP_TA_1); // TODO: Implement control types
+    const IEC104::TypeIdEnum controlType(M_DP_TB_1); // TODO: Implement control types
 
     const long dataId1 = 0x030044;
     const long dataId2 = 0x020044;
@@ -248,25 +248,150 @@ UTIL::Enum<Test>::EnumDefinition const UTIL::Enum<Test>::msDefinition
     const int ioaSize = 3;
     IEC104::DataFactory factory(ioaSize);
 
-    const IEC104::Iec104DataDefinition defDoublePointNoTimestamp(IEC104::TypeIdEnum(M_DP_NA_1), 1234);
+    {
+      const IEC104::Iec104DataDefinition defDoublePointNoTimestamp(IEC104::TypeIdEnum(M_DP_NA_1), 1234);
 
-    
-    auto spDoublePoint = factory.Create(defDoublePointNoTimestamp);
-    BOOST_CHECK_EQUAL(spDoublePoint->GetTypeString(), "M_DP_NA_1");
-    BOOST_CHECK_EQUAL(spDoublePoint->GetId(), "1234");
-    BOOST_CHECK_EQUAL(spDoublePoint->GetValue(), "faulty");
-    BOOST_CHECK_EQUAL(spDoublePoint->GetQuality(), "invalid");
-    BOOST_CHECK_EQUAL(spDoublePoint->GetTimestamp(), "");
+      auto spDoublePoint = factory.Create(defDoublePointNoTimestamp);
+      BOOST_CHECK_EQUAL(spDoublePoint->GetTypeString(), "M_DP_NA_1");
+      BOOST_CHECK_EQUAL(spDoublePoint->GetId(), "1234");
+      BOOST_CHECK_EQUAL(spDoublePoint->GetValue(), "faulty");
+      BOOST_CHECK_EQUAL(spDoublePoint->GetQuality(), "invalid");
+      BOOST_CHECK_EQUAL(spDoublePoint->GetTimestamp(), "");
 
-    IEC104::SpBaseInformation pNative(spDoublePoint->Write());
-    BOOST_CHECK_EQUAL(DoublePointInformation_getValue(reinterpret_cast<DoublePointInformation>(pNative.Get())), IEC60870_DOUBLE_POINT_INDETERMINATE);
-    BOOST_CHECK_EQUAL(DoublePointInformation_getQuality(reinterpret_cast<DoublePointInformation>(pNative.Get())), IEC60870_QUALITY_INVALID);
-    BOOST_CHECK_EQUAL(InformationObject_getType(pNative.Get()), M_DP_NA_1);
-    BOOST_CHECK_EQUAL(InformationObject_getObjectAddress(pNative.Get()), 1234);
+      IEC104::SpBaseInformation pNative(spDoublePoint->Write());
+      BOOST_CHECK_EQUAL(DoublePointInformation_getValue(reinterpret_cast<DoublePointInformation>(pNative.Get())), IEC60870_DOUBLE_POINT_INDETERMINATE);
+      BOOST_CHECK_EQUAL(DoublePointInformation_getQuality(reinterpret_cast<DoublePointInformation>(pNative.Get())), IEC60870_QUALITY_INVALID);
+      BOOST_CHECK_EQUAL(InformationObject_getType(pNative.Get()), M_DP_NA_1);
+      BOOST_CHECK_EQUAL(InformationObject_getObjectAddress(pNative.Get()), 1234);
+    }
 
-    const IEC104::Iec104DataDefinition defDoublePointTime24(IEC104::TypeIdEnum(M_DP_TA_1), 1235);
-    auto spDoublePointTime24 = factory.Create(defDoublePointTime24);
-    // TODO
+    {
+      const IEC104::Iec104DataDefinition defDoublePointTime56(IEC104::TypeIdEnum(M_DP_TB_1), 1235);
+      auto spDoublePointTime = factory.Create(defDoublePointTime56);
+      BOOST_CHECK_EQUAL(spDoublePointTime->GetTypeString(), "M_DP_TB_1");
+      BOOST_CHECK_EQUAL(spDoublePointTime->GetId(), "1235");
+      BOOST_CHECK_EQUAL(spDoublePointTime->GetValue(), "faulty");
+      BOOST_CHECK_EQUAL(spDoublePointTime->GetQuality(), "invalid");
+      BOOST_CHECK_NE(spDoublePointTime->GetTimestamp(), "");
+
+      TC::BaseDataPropertyList updateData("on", "good", "2020-01-23T18:05:23.134");
+      const size_t utcTime = 1579802723134;
+
+      BOOST_CHECK_NO_THROW(spDoublePointTime->Update(updateData));
+      IEC104::SpBaseInformation pNative(spDoublePointTime->Write());
+      BOOST_CHECK_EQUAL(DoublePointInformation_getValue(reinterpret_cast<DoublePointInformation>(pNative.Get())), IEC60870_DOUBLE_POINT_ON);
+      BOOST_CHECK_EQUAL(DoublePointInformation_getQuality(reinterpret_cast<DoublePointInformation>(pNative.Get())), IEC60870_QUALITY_GOOD);
+      CP56Time2a pTime = DoublePointWithCP56Time2a_getTimestamp(reinterpret_cast<DoublePointWithCP56Time2a>(pNative.Get()));
+      BOOST_CHECK_EQUAL(CP56Time2a_toMsTimestamp(pTime), utcTime);
+      BOOST_CHECK_EQUAL(InformationObject_getType(pNative.Get()), M_DP_TB_1);
+      BOOST_CHECK_EQUAL(InformationObject_getObjectAddress(pNative.Get()), 1235);
+    }
+
   }
 
+  BOOST_AUTO_TEST_CASE(TestTimestamp)
+  {
+    const std::string shortTimestamp = "2019-09-23T14:23:00";
+    const size_t utcShort = 1569248580000;
+    const std::string longTimestamp = "2019-09-23T14:23:00.109";
+    const size_t utcLong = 1569248580109;
+
+    std::unique_ptr<IEC104::Timestamp> pTime = nullptr;
+    BOOST_CHECK_NO_THROW(pTime.reset(new IEC104::Timestamp(shortTimestamp)));
+    BOOST_CHECK_EQUAL(pTime->GetMilliseconds(), utcShort);
+    BOOST_CHECK_NO_THROW(pTime.reset(new IEC104::Timestamp(longTimestamp)));
+    BOOST_CHECK_EQUAL(pTime->GetMilliseconds(), utcLong);
+  }
+
+  BOOST_AUTO_TEST_CASE(TestSinglePointDataHierarchy)
+  {
+    const int ioaSize = 3;
+    IEC104::DataFactory factory(ioaSize);
+
+    {
+      const IEC104::Iec104DataDefinition defSinglePointNoTimestamp(IEC104::TypeIdEnum(M_SP_NA_1), 1234);
+
+      auto spSinglePoint = factory.Create(defSinglePointNoTimestamp);
+      BOOST_CHECK_EQUAL(spSinglePoint->GetTypeString(), "M_SP_NA_1");
+      BOOST_CHECK_EQUAL(spSinglePoint->GetId(), "1234");
+      BOOST_CHECK_EQUAL(spSinglePoint->GetValue(), "false");
+      BOOST_CHECK_EQUAL(spSinglePoint->GetQuality(), "invalid");
+      BOOST_CHECK_EQUAL(spSinglePoint->GetTimestamp(), "");
+
+      IEC104::SpBaseInformation pNative(spSinglePoint->Write());
+      BOOST_CHECK_EQUAL(SinglePointInformation_getValue(reinterpret_cast<SinglePointInformation>(pNative.Get())), false);
+      BOOST_CHECK_EQUAL(SinglePointInformation_getQuality(reinterpret_cast<SinglePointInformation>(pNative.Get())), IEC60870_QUALITY_INVALID);
+      BOOST_CHECK_EQUAL(InformationObject_getType(pNative.Get()), M_SP_NA_1);
+      BOOST_CHECK_EQUAL(InformationObject_getObjectAddress(pNative.Get()), 1234);
+    }
+
+    {
+      const IEC104::Iec104DataDefinition defSinglePointTime56(IEC104::TypeIdEnum(M_SP_TB_1), 1235);
+      auto spSinglePointTime = factory.Create(defSinglePointTime56);
+      BOOST_CHECK_EQUAL(spSinglePointTime->GetTypeString(), "M_SP_TB_1");
+      BOOST_CHECK_EQUAL(spSinglePointTime->GetId(), "1235");
+      BOOST_CHECK_EQUAL(spSinglePointTime->GetValue(), "false");
+      BOOST_CHECK_EQUAL(spSinglePointTime->GetQuality(), "invalid");
+      BOOST_CHECK_NE(   spSinglePointTime->GetTimestamp(), "");
+
+      TC::BaseDataPropertyList updateData("true", "blocked", "2020-01-23T18:05:23.134");
+      const size_t utcTime = 1579802723134;
+
+      BOOST_CHECK_NO_THROW(spSinglePointTime->Update(updateData));
+      IEC104::SpBaseInformation pNative(spSinglePointTime->Write());
+      BOOST_CHECK_EQUAL(SinglePointInformation_getValue(reinterpret_cast<SinglePointInformation>(pNative.Get())), true);
+      BOOST_CHECK_EQUAL(SinglePointInformation_getQuality(reinterpret_cast<SinglePointInformation>(pNative.Get())), IEC60870_QUALITY_BLOCKED);
+      CP56Time2a pTime = SinglePointWithCP56Time2a_getTimestamp(reinterpret_cast<SinglePointWithCP56Time2a>(pNative.Get()));
+      BOOST_CHECK_EQUAL(CP56Time2a_toMsTimestamp(pTime), utcTime);
+      BOOST_CHECK_EQUAL(InformationObject_getType(pNative.Get()), M_SP_TB_1);
+      BOOST_CHECK_EQUAL(InformationObject_getObjectAddress(pNative.Get()), 1235);
+    }
+
+  }
+
+  BOOST_AUTO_TEST_CASE(TestFloatDataHierarchy)
+  {
+    const int ioaSize = 3;
+    IEC104::DataFactory factory(ioaSize);
+
+    {
+      const IEC104::Iec104DataDefinition defFloatNoTimestamp(IEC104::TypeIdEnum(M_ME_NC_1), 1234);
+
+      auto spFloat = factory.Create(defFloatNoTimestamp);
+      BOOST_CHECK_EQUAL(spFloat->GetTypeString(), "M_ME_NC_1");
+      BOOST_CHECK_EQUAL(spFloat->GetId(), "1234");
+      BOOST_CHECK_EQUAL(spFloat->GetValue(), std::to_string(float(0.0)));
+      BOOST_CHECK_EQUAL(spFloat->GetQuality(), "invalid");
+      BOOST_CHECK_EQUAL(spFloat->GetTimestamp(), "");
+
+      IEC104::SpBaseInformation pNative(spFloat->Write());
+      BOOST_CHECK_EQUAL(MeasuredValueShort_getValue(reinterpret_cast<MeasuredValueShort>(pNative.Get())), float(0.0));
+      BOOST_CHECK_EQUAL(MeasuredValueShort_getQuality(reinterpret_cast<MeasuredValueShort>(pNative.Get())), IEC60870_QUALITY_INVALID);
+      BOOST_CHECK_EQUAL(InformationObject_getType(pNative.Get()), M_ME_NC_1);
+      BOOST_CHECK_EQUAL(InformationObject_getObjectAddress(pNative.Get()), 1234);
+    }
+
+    {
+      const IEC104::Iec104DataDefinition defFloatTime56(IEC104::TypeIdEnum(M_ME_TF_1), 1235);
+      auto spFloatTime = factory.Create(defFloatTime56);
+      BOOST_CHECK_EQUAL(spFloatTime->GetTypeString(), "M_ME_TF_1");
+      BOOST_CHECK_EQUAL(spFloatTime->GetId(), "1235");
+      BOOST_CHECK_EQUAL(spFloatTime->GetValue(), std::to_string(float(0.0)));
+      BOOST_CHECK_EQUAL(spFloatTime->GetQuality(), "invalid");
+      BOOST_CHECK_NE(   spFloatTime->GetTimestamp(), "");
+
+      TC::BaseDataPropertyList updateData("212.13", "overflow", "2020-01-23T18:05:23.134");
+      const size_t utcTime = 1579802723134;
+
+      BOOST_CHECK_NO_THROW(spFloatTime->Update(updateData));
+      IEC104::SpBaseInformation pNative(spFloatTime->Write());
+      BOOST_CHECK_EQUAL(MeasuredValueShort_getValue(reinterpret_cast<MeasuredValueShort>(pNative.Get())), float(212.13));
+      BOOST_CHECK_EQUAL(MeasuredValueShort_getQuality(reinterpret_cast<MeasuredValueShort>(pNative.Get())), IEC60870_QUALITY_OVERFLOW);
+      CP56Time2a pTime = MeasuredValueShortWithCP56Time2a_getTimestamp(reinterpret_cast<MeasuredValueShortWithCP56Time2a>(pNative.Get()));
+      BOOST_CHECK_EQUAL(CP56Time2a_toMsTimestamp(pTime), utcTime);
+      BOOST_CHECK_EQUAL(InformationObject_getType(pNative.Get()), M_ME_TF_1);
+      BOOST_CHECK_EQUAL(InformationObject_getObjectAddress(pNative.Get()), 1235);
+    }
+
+  }
 

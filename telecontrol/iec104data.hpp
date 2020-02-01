@@ -10,6 +10,7 @@
 #include "iec104smartpointer.hpp"
 #include "staticenums.hpp"
 #include "iec104quality.hpp"
+#include "iec104timestamp.hpp"
 
 extern "C"
 {
@@ -53,6 +54,7 @@ namespace IEC104
 
   protected:
     explicit BaseData(const std::string& arId, const std::string& arType);
+    BaseData();
     void AssertTypeIdIntegrity(InformationObject apCheckedIoa) const;
 
   private:
@@ -75,40 +77,117 @@ namespace IEC104
     void AssertRange(size_t aTestedNumber, size_t aMaxBytes) const;
     size_t mIoaBytes;
   };
-    
 
-  class DoublePointStatus : public BaseData
+  class DataWithQuality : virtual public BaseData
+  {
+  public:
+    virtual ~DataWithQuality();
+
+    virtual bool UpdateQuality(const std::string& arUpdate) override;
+    virtual std::string GetQuality() const override;
+
+  protected:
+    DataWithQuality()
+      : BaseData(), mQuality() {}
+
+    Quality mQuality;
+  };
+
+  class DataWithTimestamp : virtual public BaseData
+  {
+  public:
+    virtual ~DataWithTimestamp();
+
+    virtual bool UpdateTimestamp(const std::string& arUpdate) override;
+    virtual std::string GetTimestamp() const override;
+  
+  protected:
+    DataWithTimestamp()
+      : BaseData(), mTime() {}
+
+    Timestamp mTime;
+  };
+  
+///
+
+  class DoublePointStatus : public DataWithQuality
   {
   public:
     DoublePointStatus(int arId);
     virtual ~DoublePointStatus() {}
 
     virtual bool UpdateValue(const std::string& arUpdate) override;
-    virtual bool UpdateQuality(const std::string& arUpdate) override;
-
     virtual std::string GetValue() const override;
-    virtual std::string GetQuality() const override;
 
     virtual SpBaseInformation Write() const override;
 
   protected:
-    DoublePointStatus(int arId, const std::string& arType); // Constructor for child classes
+    DoublePointStatus();
 
     EnumPosition mValue;
-    Quality mQuality;
   };
 
 
-  class DoublePointStatusTime24 : public DoublePointStatus
+  class DoublePointStatusTime : public DoublePointStatus, DataWithTimestamp
   {
   public:
-    DoublePointStatusTime24(int arId);
-
-    virtual bool UpdateTimestamp(const std::string& arUpdate) override;
-    virtual std::string GetTimestamp() const override;
-    
+    DoublePointStatusTime(int arId);
+    virtual ~DoublePointStatusTime() {}
     virtual SpBaseInformation Write() const override;
   };
 
+///
+
+  class SinglePointStatus : public DataWithQuality
+  {
+  public:
+    SinglePointStatus(int arId);
+    virtual ~SinglePointStatus() {}
+
+    virtual bool UpdateValue(const std::string& arUpdate) override;
+    virtual std::string GetValue() const override;
+
+    virtual SpBaseInformation Write() const override;
+
+  protected:
+    SinglePointStatus();
+
+    bool mValue;
+
+    static constexpr const char* sTrue = "true";
+    static constexpr const char* sFalse = "false";
+  };
+
+  class SinglePointStatusTime : public SinglePointStatus, DataWithTimestamp
+  {
+  public:
+    SinglePointStatusTime(int arId);
+    virtual SpBaseInformation Write() const override;
+  };
+  
+  ///
+
+  class FloatValue : public DataWithQuality
+  {
+  public:
+    FloatValue(int arId);
+    virtual ~FloatValue() {}
+
+    virtual bool UpdateValue(const std::string& arUpdate) override;
+    virtual std::string GetValue() const override;
+
+    virtual SpBaseInformation Write() const override;
+
+  protected:
+    FloatValue();
+    float mValue;
+  };
+
+  class FloatValueTime : public FloatValue, DataWithTimestamp
+  {
+  public:
+    FloatValueTime(int arId);
+    virtual SpBaseInformation Write() const override;
+  };
 }
 #endif // !IEC104DATA_HPP_

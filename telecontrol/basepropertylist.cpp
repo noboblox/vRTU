@@ -6,6 +6,37 @@
 namespace TC
 {
 
+  BaseDataPropertyList::BaseDataPropertyList(const std::string& arValue, const std::string& arQuality, const std::string& arTimestamp)
+  {
+    if (!arValue.empty())
+      mProperties.insert({csValue, arValue});
+    if (!arQuality.empty())
+      mProperties.insert({csQuality, arQuality});
+    if (!arTimestamp.empty())
+      mProperties.insert({csTimestamp, arTimestamp});
+  }
+
+  const bool
+  BaseDataPropertyList::HasExplicitProperty(const std::string& arKey) const
+  {
+    return mProperties.find(arKey) != mProperties.cend();
+  }
+
+  const std::string&
+  BaseDataPropertyList::GetExplicitProperty(const std::string arKey) const
+  {
+    const auto resultIt = mProperties.find(arKey);
+    if (resultIt == mProperties.cend())
+      throw std::invalid_argument("Property not found");
+    return resultIt->second;
+  }
+
+  const std::string& 
+  BaseDataPropertyList::GetDefaultProperty(const std::string arKey) const
+  {
+    throw std::invalid_argument("No default properties present");
+  }
+
   BasePropertyList::~BasePropertyList() {}
 
   long

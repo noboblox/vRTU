@@ -18,11 +18,19 @@ namespace IEC104
     SpDataPtr pNew = nullptr;
     switch (typeId.GetValue())
     {
-      // TODO
     case M_DP_NA_1:
+      // TODO
       return SpDataPtr(new IEC104::DoublePointStatus(dataId));
-    case M_DP_TA_1:
-      return SpDataPtr(new IEC104::DoublePointStatusTime24(dataId));
+    case M_DP_TB_1:
+      return SpDataPtr(new IEC104::DoublePointStatusTime(dataId));
+    case M_SP_NA_1:
+      return SpDataPtr(new IEC104::SinglePointStatus(dataId));
+    case M_SP_TB_1:
+      return SpDataPtr(new IEC104::SinglePointStatusTime(dataId));
+    case M_ME_NC_1:
+      return SpDataPtr(new IEC104::FloatValue(dataId));
+    case M_ME_TF_1:
+      return SpDataPtr(new IEC104::FloatValueTime(dataId));
 
     default:
       throw std::invalid_argument("Creation failed: Unknown type");
@@ -45,6 +53,9 @@ namespace IEC104
   BaseData::BaseData(const std::string& arId, const std::string& arType)
     : mId(arId), mType(arType)
   {}
+
+  BaseData::BaseData()
+    : mId("invalid"), mType("invalid") {}
 
   BaseData::~BaseData()
   {}
@@ -73,16 +84,6 @@ namespace IEC104
     return updated;
   }
 
-  DoublePointStatus::DoublePointStatus(int arId)
-    : BaseData(std::to_string(arId), TypeIdEnum(M_DP_NA_1).GetString()),
-      mValue(IEC60870_DOUBLE_POINT_INDETERMINATE),
-      mQuality() {}
-
-  DoublePointStatus::DoublePointStatus(int arId, const std::string& arType)
-    : BaseData(std::to_string(arId), arType),
-      mValue(IEC60870_DOUBLE_POINT_INDETERMINATE),
-      mQuality() {}
-
   bool
   DoublePointStatus::UpdateValue(const std::string& arUpdate)
   {
@@ -95,8 +96,14 @@ namespace IEC104
     return false;
   }
 
+  std::string
+  DoublePointStatus::GetValue() const
+  {
+    return mValue.GetString();
+  }
+
   bool
-  DoublePointStatus::UpdateQuality(const std::string& arUpdate)
+  DataWithQuality::UpdateQuality(const std::string& arUpdate)
   {
     Quality newQuality(arUpdate);
     if (mQuality != newQuality)
@@ -106,50 +113,161 @@ namespace IEC104
     }
     return false;
   }
-
+  
   std::string
-  DoublePointStatus::GetValue() const
-  {
-    return mValue.GetString();
-  }
-
-  std::string
-  DoublePointStatus::GetQuality() const
+  DataWithQuality::GetQuality() const
   {
     return mQuality.GetString();
   }
 
+  DataWithQuality::~DataWithQuality() {}
+  DataWithTimestamp::~DataWithTimestamp() {}
+
+  bool
+  DataWithTimestamp::UpdateTimestamp(const std::string& arUpdate)
+  {
+    Timestamp newTimestamp(arUpdate);
+
+    if (mTime != newTimestamp)
+    {
+      mTime = newTimestamp;
+      return true;
+    }
+    return false;
+  }
+
+  std::string
+  DataWithTimestamp::GetTimestamp() const
+  {
+    return mTime.GetString();
+  }
+
+  /// Ctors
+  DoublePointStatus::DoublePointStatus(int arId)
+    : BaseData(std::to_string(arId), TypeIdEnum(M_DP_NA_1).GetString()),
+      mValue(IEC60870_DOUBLE_POINT_INDETERMINATE) {}
+
+  DoublePointStatus::DoublePointStatus()
+    : BaseData(),
+      mValue(IEC60870_DOUBLE_POINT_INDETERMINATE) {}
+
+  DoublePointStatusTime::DoublePointStatusTime(int arId)
+    : BaseData(std::to_string(arId), TypeIdEnum(M_DP_TB_1).GetString()) {}
+
+  /// Write(). Each data has its own write function responsible for encoding into an lib60870 InformationObject
   SpBaseInformation
   DoublePointStatus::Write() const
   {
-    const int ioa = std::stoi(GetId());
-    SpBaseInformation pNew(reinterpret_cast<InformationObject>(DoublePointInformation_create(nullptr, ioa, mValue.GetValue(), mQuality.GetInt())));
+    SpBaseInformation pNew(reinterpret_cast<InformationObject>(DoublePointInformation_create(nullptr, std::stoi(GetId()), mValue.GetValue(), mQuality.GetInt())));
     AssertTypeIdIntegrity(pNew.Get());
     return std::move(pNew);
   }
 
-  DoublePointStatusTime24::DoublePointStatusTime24(int arId)
-    : DoublePointStatus(arId, IEC104::TypeIdEnum(M_DP_TA_1).GetString())
+  SpBaseInformation
+  DoublePointStatusTime::Write() const
   {
-    sCP24Time2a empty{}; // TODO -> Member
+    SpBaseInformation pNew(reinterpret_cast<InformationObject>(DoublePointWithCP56Time2a_create(nullptr, std::stoi(GetId()), mValue.GetValue(), mQuality.GetInt(), &mTime.Encode56())));
+    AssertTypeIdIntegrity(pNew.Get());
+    return std::move(pNew);
   }
 
+
+  /// Single point status
+
+  SinglePointStatus::SinglePointStatus(int arId)
+    : BaseData(std::to_string(arId), TypeIdEnum(M_SP_NA_1).GetString()),
+    mValue(false) {}
+
+  SinglePointStatus::SinglePointStatus()
+    : BaseData(),
+    mValue(false) {}
+
   bool
-  DoublePointStatusTime24::UpdateTimestamp(const std::string& arUpdate)
+  SinglePointStatus::UpdateValue(const std::string& arUpdate)
   {
-    return false; // TODO 
+    bool newValue(false);
+    if (arUpdate == sTrue)
+      newValue = true;
+    else if (arUpdate != sFalse)
+      throw std::invalid_argument("Could not derive any value from the provided string.");
+    
+    if (mValue != newValue)
+    {
+      mValue = newValue;
+      return true;
+    }
+    return false;
   }
 
   std::string
-  DoublePointStatusTime24::GetTimestamp() const
+  SinglePointStatus::GetValue() const
   {
-    return ""; // TODO
+    return mValue ? sTrue : sFalse;
   }
 
   SpBaseInformation
-  DoublePointStatusTime24::Write() const
+  SinglePointStatus::Write() const
   {
-    return SpBaseInformation(nullptr); // TODO
+    SpBaseInformation pNew(reinterpret_cast<InformationObject>(SinglePointInformation_create(nullptr, std::stoi(GetId()), mValue, mQuality.GetInt())));
+    AssertTypeIdIntegrity(pNew.Get());
+    return std::move(pNew);
   }
 
+  SinglePointStatusTime::SinglePointStatusTime(int arId)
+    : BaseData(std::to_string(arId), TypeIdEnum(M_SP_TB_1).GetString()) {}
+  
+  SpBaseInformation
+  SinglePointStatusTime::Write() const
+  {
+    SpBaseInformation pNew(reinterpret_cast<InformationObject>(SinglePointWithCP56Time2a_create(nullptr, std::stoi(GetId()), mValue, mQuality.GetInt(), &mTime.Encode56())));
+    AssertTypeIdIntegrity(pNew.Get());
+    return std::move(pNew);
+  }  
+  
+  /// Short Floating point  
+
+  FloatValue::FloatValue(int arId)
+    : BaseData(std::to_string(arId), TypeIdEnum(M_ME_NC_1).GetString()),
+    mValue(0.0) {}
+
+  FloatValue::FloatValue()
+    : BaseData(),
+    mValue(0.0) {}
+
+  bool
+  FloatValue::UpdateValue(const std::string& arUpdate)
+  {
+    float newValue(std::stof(arUpdate));
+    if (mValue != newValue)
+    {
+      mValue = newValue;
+      return true;
+    }
+    return false;
+  }
+
+  std::string
+  FloatValue::GetValue() const
+  {
+    return std::to_string(mValue);
+  }
+
+  SpBaseInformation
+  FloatValue::Write() const
+  {
+    SpBaseInformation pNew(reinterpret_cast<InformationObject>(MeasuredValueShort_create(nullptr, std::stoi(GetId()), mValue, mQuality.GetInt())));
+    AssertTypeIdIntegrity(pNew.Get());
+    return std::move(pNew);
+  }
+
+  FloatValueTime::FloatValueTime(int arId)
+    : BaseData(std::to_string(arId), TypeIdEnum(M_ME_TF_1).GetString()) {}
+  
+  SpBaseInformation
+  FloatValueTime::Write() const
+  {
+    SpBaseInformation pNew(reinterpret_cast<InformationObject>(MeasuredValueShortWithCP56Time2a_create(nullptr, std::stoi(GetId()), mValue, mQuality.GetInt(), &mTime.Encode56())));
+    AssertTypeIdIntegrity(pNew.Get());
+    return std::move(pNew);
+  }
 }

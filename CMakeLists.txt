@@ -14,6 +14,7 @@ add_library( vrtu STATIC
              telecontrol/iec104data.cpp
              telecontrol/staticenums.cpp
              telecontrol/iec104quality.cpp
+             telecontrol/iec104timestamp.cpp
            )
 
 target_include_directories( vrtu PUBLIC
@@ -28,7 +29,8 @@ target_include_directories( vrtu PRIVATE
                           )
                           
 target_link_libraries( vrtu
-                       PRIVATE Boost::boost 
+                       PRIVATE Boost::boost
+                       PRIVATE Boost::date_time
                        PRIVATE lib60870
                      )
 

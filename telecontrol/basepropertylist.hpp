@@ -11,6 +11,7 @@ namespace TC
   class BasePropertyList
   {
   public:
+    using PropertyMap = std::unordered_map<std::string, std::string>;
     static constexpr const char* csTrue = "true";
     static constexpr const char* csFalse = "false";
     
@@ -34,17 +35,25 @@ namespace TC
     {
       return UTIL::Enum<PlainEnumT> (GetString(arKey, aAllowDefault));
     }
+
+  protected:
+    PropertyMap mProperties;
   };
 
   class BaseDataPropertyList : public BasePropertyList
   {
-    using PropertyMap = std::unordered_map<std::string, std::string>;
-
   public:
-    static constexpr const char* csValue = "Value";
-    static constexpr const char* csTimestamp = "Timestamp";
-    static constexpr const char* csQuality = "Quality";
+    BaseDataPropertyList(const std::string& arValue, const std::string& arQuality, const std::string& arTimestamp);
 
+    virtual const bool HasExplicitProperty(const std::string& arKey) const override;
+    virtual const std::string& GetExplicitProperty(const std::string arKey) const override;
+
+    virtual const bool HasDefaultProperty(const std::string& arKey) const override { return false; }
+    virtual const std::string& GetDefaultProperty(const std::string arKey) const override;
+
+    static constexpr const char* csValue = "Value";
+    static constexpr const char* csQuality = "Quality";
+    static constexpr const char* csTimestamp = "Timestamp";
   };
 
 }

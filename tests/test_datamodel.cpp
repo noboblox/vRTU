@@ -5,9 +5,6 @@
  *      Author: rene
  */
 
-#define BOOST_TEST_DYN_LINK
-
-
 #include <boost/test/unit_test.hpp>
 
 #include <atomic>
@@ -34,8 +31,8 @@ BOOST_AUTO_TEST_CASE(ShallSucceedWatchdogTimeout)
   }
 
   auto timeoutDuration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-  const auto maxDuration = std::chrono::milliseconds(1100);
-  const auto minDuration = std::chrono::milliseconds(900);
+  const auto maxDuration = std::chrono::milliseconds(1250);
+  const auto minDuration = std::chrono::milliseconds(750);
 
   std::cout << "Duration = " << timeoutDuration.count() << "ms" << std::endl;
   if ((timeoutDuration > maxDuration) ||

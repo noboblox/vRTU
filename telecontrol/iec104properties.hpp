@@ -12,7 +12,6 @@ namespace IEC104
 {
   class Iec104DataDefinition : public TC::BasePropertyList
   {
-    using PropertyMap = std::unordered_map<std::string, std::string>;
   public:
     static constexpr const char* csTypeId = "TypeId"; //!< ASDU type for the data point
     static constexpr const char* csDataId = "DataId"; //!< Information object address
@@ -26,9 +25,6 @@ namespace IEC104
 
     virtual const bool HasDefaultProperty(const std::string& arKey) const override;
     virtual const std::string& GetDefaultProperty(const std::string arKey) const override;
-
-  protected:
-    PropertyMap mProperties;
   };
 }
 #endif
