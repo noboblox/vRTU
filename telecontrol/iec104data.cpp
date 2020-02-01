@@ -166,7 +166,8 @@ namespace IEC104
   SpBaseInformation
   DoublePointStatusTime::Write() const
   {
-    SpBaseInformation pNew(reinterpret_cast<InformationObject>(DoublePointWithCP56Time2a_create(nullptr, std::stoi(GetId()), mValue.GetValue(), mQuality.GetInt(), &mTime.Encode56())));
+    sCP56Time2a time(mTime.Encode56());
+    SpBaseInformation pNew(reinterpret_cast<InformationObject>(DoublePointWithCP56Time2a_create(nullptr, std::stoi(GetId()), mValue.GetValue(), mQuality.GetInt(), &time)));
     AssertTypeIdIntegrity(pNew.Get());
     return std::move(pNew);
   }
@@ -219,7 +220,8 @@ namespace IEC104
   SpBaseInformation
   SinglePointStatusTime::Write() const
   {
-    SpBaseInformation pNew(reinterpret_cast<InformationObject>(SinglePointWithCP56Time2a_create(nullptr, std::stoi(GetId()), mValue, mQuality.GetInt(), &mTime.Encode56())));
+    sCP56Time2a time(mTime.Encode56());
+    SpBaseInformation pNew(reinterpret_cast<InformationObject>(SinglePointWithCP56Time2a_create(nullptr, std::stoi(GetId()), mValue, mQuality.GetInt(), &time)));
     AssertTypeIdIntegrity(pNew.Get());
     return std::move(pNew);
   }  
@@ -266,7 +268,8 @@ namespace IEC104
   SpBaseInformation
   FloatValueTime::Write() const
   {
-    SpBaseInformation pNew(reinterpret_cast<InformationObject>(MeasuredValueShortWithCP56Time2a_create(nullptr, std::stoi(GetId()), mValue, mQuality.GetInt(), &mTime.Encode56())));
+    sCP56Time2a time(mTime.Encode56());
+    SpBaseInformation pNew(reinterpret_cast<InformationObject>(MeasuredValueShortWithCP56Time2a_create(nullptr, std::stoi(GetId()), mValue, mQuality.GetInt(), &time)));
     AssertTypeIdIntegrity(pNew.Get());
     return std::move(pNew);
   }
