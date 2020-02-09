@@ -8,13 +8,7 @@ matrix:
     - os: linux
       dist: bionic
       compiler: clang
-    - os: linux
-      dist: xenial
-      compiler: gcc
-    - os: linux
-      dist: xenial
-      compiler: clang
-
+      
 before_script:
   - wget https://tls.mbed.org/download/mbedtls-2.6.0-gpl.tgz
   - tar -C external/lib60870/lib60870-C/dependencies/ -xvf mbedtls-2.6.0-gpl.tgz
