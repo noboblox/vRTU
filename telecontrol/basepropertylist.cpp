@@ -5,6 +5,10 @@
 
 namespace TC
 {
+  constexpr const char* BaseDataPropertyList::csValue;
+  constexpr const char* BaseDataPropertyList::csQuality;
+  constexpr const char* BaseDataPropertyList::csTimestamp;
+
 
   BaseDataPropertyList::BaseDataPropertyList(const std::string& arValue, const std::string& arQuality, const std::string& arTimestamp)
   {

@@ -13,7 +13,9 @@
 *.cmake
 *.vcxproj
 *.vcxproj.filters
-
+Makefile
+libvrtu.a
+test_vrtu
 
 
 # User-specific files (MonoDevelop/Xamarin Studio)
