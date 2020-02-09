@@ -13,6 +13,8 @@ namespace IEC104
   class SpInfoObjectPointer
   {
   public:
+    SpInfoObjectPointer() : mpHandle(nullptr) {}
+
     explicit SpInfoObjectPointer(PtrT apOwned)
       : mpHandle(apOwned) {}
 

@@ -29,9 +29,10 @@ namespace IEC104
 {
   struct Iec104ServerParameter : public TC::BaseServerParameter
   {
-   Iec104ServerParameter(const boost::asio::ip::address& aIp, uint16_t aPort, uint16_t aServerId)
+   Iec104ServerParameter(const boost::asio::ip::address& aIp, uint16_t aPort, uint16_t aServerId,
+                         size_t aCycleMilliseconds = msDefaultCycleMilliseconds)
       : TC::BaseServerParameter(aIp, aPort),
-        mId(aServerId) {}
+        mId(aServerId), mCycle(msDefaultCycleMilliseconds) {}
 
    virtual ~Iec104ServerParameter() {}
 
@@ -42,9 +43,11 @@ namespace IEC104
     }
 
     static constexpr uint16_t msDefaultServerPort = 2404;
+    static constexpr size_t   msDefaultCycleMilliseconds = 2000;
 
   public:
-    uint16_t mId; //!< IEC 104 common address for which IOAs the server will respond
+    uint16_t mId; //!< IEC 104 common address for which IOAs the server will respond (TODO mutiple CAs per server)
+    size_t mCycle;
   };
 }
 

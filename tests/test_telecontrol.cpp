@@ -8,6 +8,7 @@
 #define BOOST_TEST_MODULE TestTelecontrol
 
 #include <boost/test/unit_test.hpp>
+#include <set>
 
 #include "staticenums.hpp"
 #include "iec104server.hpp"
@@ -34,6 +35,74 @@ BOOST_AUTO_TEST_CASE(ShallSucceedBasicConnect)
   // New connect shall still succeed
   InitClient();
   BOOST_CHECK_EQUAL(gpTestClient->Connect(), true);
+}
+
+BOOST_AUTO_TEST_CASE(ShallSucceedServerCycle)
+{
+  InitClient();
+  IEC104::Iec104Server server(IEC104::Iec104ServerParameter::LocalDefaultServer(1));
+
+
+  server.RegisterStatusData(IEC104::Iec104DataDefinition(IEC104::TypeIdEnum(M_DP_TB_1), 1000));
+  server.RegisterStatusData(IEC104::Iec104DataDefinition(IEC104::TypeIdEnum(M_DP_TB_1), 1001));
+  server.RegisterStatusData(IEC104::Iec104DataDefinition(IEC104::TypeIdEnum(M_DP_TB_1), 1002));
+  server.RegisterStatusData(IEC104::Iec104DataDefinition(IEC104::TypeIdEnum(M_DP_TB_1), 1003));
+
+  server.RegisterStatusData(IEC104::Iec104DataDefinition(IEC104::TypeIdEnum(M_SP_TB_1), 990));
+
+  server.RegisterStatusData(IEC104::Iec104DataDefinition(IEC104::TypeIdEnum(M_ME_TF_1), 99998));
+  server.RegisterStatusData(IEC104::Iec104DataDefinition(IEC104::TypeIdEnum(M_ME_TF_1), 99086));
+  server.RegisterStatusData(IEC104::Iec104DataDefinition(IEC104::TypeIdEnum(M_ME_TF_1), 49843));
+
+  server.StartServer();
+  BOOST_CHECK_EQUAL(gpTestClient->Connect(), true);
+  gpTestClient->StartMonitoring();
+
+
+  std::vector<IEC104::SpBaseInformation> cycleData;
+  while (cycleData.size() < 8)
+  {
+    gpTestClient->ReadBuffer(cycleData);
+    std::this_thread::sleep_for(std::chrono::milliseconds(50)); // wait for the server to send a cycle
+  }
+
+  size_t sp = 0, dp = 0, me = 0;
+  std::set<int> ids;
+
+  for (const auto& element : cycleData)
+  {
+    ids.insert(InformationObject_getObjectAddress(element.Get()));
+
+    switch (InformationObject_getType(element.Get()))
+    {
+    case M_DP_TB_1:
+      ++dp;
+      break;
+    case M_SP_TB_1:
+      ++sp;
+      break;
+    case M_ME_TF_1:
+      ++me;
+      break;
+    default:
+      break;
+    }
+  }
+
+  BOOST_CHECK_EQUAL(sp, 1);
+  BOOST_CHECK_EQUAL(dp, 4);
+  BOOST_CHECK_EQUAL(me, 3);
+
+  BOOST_CHECK_NE(ids.find(1000)  == ids.cend(), false);
+  BOOST_CHECK_NE(ids.find(1001)  == ids.cend(), false);
+  BOOST_CHECK_NE(ids.find(1002)  == ids.cend(), false);
+  BOOST_CHECK_NE(ids.find(1003)  == ids.cend(), false);
+  BOOST_CHECK_NE(ids.find(990)   == ids.cend(), false);
+  BOOST_CHECK_NE(ids.find(99998) == ids.cend(), false);
+  BOOST_CHECK_NE(ids.find(99086) == ids.cend(), false);
+  BOOST_CHECK_NE(ids.find(49843) == ids.cend(), false);
+
+  KillClient();
 }
 
 BOOST_AUTO_TEST_CASE(ShallSucceedCreate104DatapointDefinition)

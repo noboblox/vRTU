@@ -8,10 +8,13 @@
 #include "iec104server.hpp"
 
 #include <mutex>
+#include <thread>
 #include <memory>
 #include <stdexcept>
 #include <unordered_map>
 #include <string>
+#include <vector>
+#include <algorithm>
 
 #include "iec104data.hpp"
 
@@ -26,13 +29,64 @@ namespace IEC104
   class Iec104ServerImpl
   {
   public:
-    using DataMap = std::unordered_map<std::string, SpDataPtr>;
-
     static constexpr size_t msDefaultQueueSize = 1024;
+
+    using DataBuffer = std::vector<SpBaseInformation>;
+
+    class DataSettings
+    {
+    public:
+      DataSettings(const std::string& arId, bool aDoCycle, bool aDoGI)
+        : mInfoObjectId(arId),
+          mSendOnCycle(aDoCycle),
+          mSendOnInterrogation(aDoGI) {}
+
+      explicit DataSettings(const std::string& arId)
+        : mInfoObjectId(arId),
+          mSendOnCycle(true),
+          mSendOnInterrogation(true) {}
+
+      const bool IsCycleData() const {return mSendOnCycle;}
+      const bool IsInterrogationData() const {return mSendOnInterrogation;}
+      const std::string& GetId() const {return mInfoObjectId;}
+
+      const bool operator< (const DataSettings& arOther) const {return mInfoObjectId <  arOther.mInfoObjectId;}
+      const bool operator==(const DataSettings& arOther) const {return mInfoObjectId == arOther.mInfoObjectId;}
+
+    private:
+      std::string mInfoObjectId;
+      bool mSendOnCycle;
+      bool mSendOnInterrogation;
+    };
+
+    class ConnectionStatus
+    {
+    public:
+      explicit ConnectionStatus(const std::string& arRemoteHost)
+        : mHostString(arRemoteHost), mActive(false) {}
+
+      const std::string& GetRemoteHost() const {return mHostString;}
+      bool IsActive() const {return mActive;}
+
+      void Activate() {mActive = true;}
+      void Deactivate() {mActive = false;}
+
+    private:
+      std::string mHostString;
+      bool mActive;
+
+    };
+
+    using ConnectionMap = std::map<IMasterConnection, ConnectionStatus>;
+    using DataMap = std::vector<std::pair<DataSettings, SpDataPtr>>;
 
     Iec104ServerImpl(const Iec104ServerParameter& arSettings)
       : mpSlave(CS104_Slave_create(msDefaultQueueSize, msDefaultQueueSize)),
-        mId(arSettings.mId)
+        mId(arSettings.mId),
+        mCycleMs(arSettings.mCycle),
+        mStatusData(),
+        mControlData(),
+        mConnections()
     {
 
       if (!CheckPreconditions(arSettings))
@@ -46,19 +100,48 @@ namespace IEC104
 
     virtual ~Iec104ServerImpl()
     {
+      StopServer();
       CS104_Slave_destroy(mpSlave);
     }
 
     void StopServer()
     {
-      const std::lock_guard<std::mutex> owner(mAccess);
-      CS104_Slave_stop(mpSlave);
+      {
+        const std::lock_guard<std::mutex> owner(mAccess);
+        if (mpSlave && CS104_Slave_isRunning(mpSlave))
+          CS104_Slave_stop(mpSlave);
+      }
+
+      if (mpLoopThread && mpLoopThread->joinable())
+        mpLoopThread->join();
+      mpLoopThread.reset(nullptr);
     }
 
     void StartServer()
     {
       const std::lock_guard<std::mutex> owner(mAccess);
       CS104_Slave_start(mpSlave);
+      if (mCycleMs != 0)
+        mpLoopThread.reset(new std::thread(&Iec104ServerImpl::ServerLoop, this));
+    }
+
+    void ServerLoop() const
+    {
+      while (true)
+      {
+        {
+          const std::lock_guard<std::mutex> owner(mAccess);
+          if (!CS104_Slave_isRunning(mpSlave))
+            return;
+        }
+
+        try
+        {
+          DoCycle();
+        }
+        catch (...) {std::cerr << "Critical error. Exception in server cycle for server " << mId << std::endl;}
+        std::this_thread::sleep_for(std::chrono::milliseconds(mCycleMs));
+      }
     }
 
     void
@@ -78,9 +161,9 @@ namespace IEC104
       const std::lock_guard<std::mutex> owner(mAccess);
 
       DataMap::iterator target;
-      if ((target = mStatusData.find(arId)) != mStatusData.end())
+      if ((target = FindData(mStatusData, DataSettings(arId))) != mStatusData.end())
         mStatusData.erase(target);
-      if ((target = mControlData.find(arId)) != mControlData.end())
+      if ((target = FindData(mControlData, DataSettings(arId))) != mControlData.end())
         mControlData.erase(target);
     }
 
@@ -103,7 +186,7 @@ namespace IEC104
       {
         const std::lock_guard<std::mutex> owner(mAccess);
 
-        DataMap::iterator target = mStatusData.find(arId);
+        DataMap::iterator target = FindData(mStatusData, DataSettings(arId));
 
         if (target == mStatusData.end())
           throw std::invalid_argument("Cannot update. Data does not exist.");
@@ -116,10 +199,95 @@ namespace IEC104
 
   private: // Private functions without own locks
 
-    void AssertUniqueId(const std::string& arId) const
+    /**
+     * @brief Sorts all IOs and sends an ASDU for each TypeId.
+     *
+     * @note arSendBuffer is cleared afterwards.
+     */
+    void SendAll(std::vector<SpBaseInformation>& arSendBuffer) const
     {
-      if ((mStatusData.find(arId) != mStatusData.cend()) ||
-        (mControlData.find(arId) != mControlData.cend()))
+      auto CompareFunc = [] (const SpBaseInformation& arLeft, const SpBaseInformation& arRight) -> bool
+      {
+        return InformationObject_getType(arLeft.Get()) < InformationObject_getType(arRight.Get());
+      };
+
+      std::sort(arSendBuffer.begin(), arSendBuffer.end(), CompareFunc);
+
+      auto it = arSendBuffer.cbegin();
+      auto it_end = arSendBuffer.cend();
+
+      while (it != it_end)
+      {
+        const auto sameTypeRange = std::equal_range(it, it_end, *it, CompareFunc);
+        SendSingleType(sameTypeRange.first, sameTypeRange.second);
+        it = sameTypeRange.second;
+      }
+      arSendBuffer.clear();
+    }
+
+    void SendSingleType(const DataBuffer::const_iterator& arBegin, const DataBuffer::const_iterator& arEnd) const
+    {
+      if (arBegin == arEnd)
+        return;
+
+      static constexpr bool isSequence = false;              // TODO VS = 1
+      static constexpr bool isNegative = false;
+      static constexpr bool isTest = false;
+      static constexpr CS101_CauseOfTransmission reasonCode = CS101_COT_PERIODIC; // TODO call this function for non cycle data
+      static constexpr int originId = 0;                    // TODO support origin address
+
+      int commonAddress = 0;
+      sCS101_AppLayerParameters serverParameters{};
+      {
+        const std::lock_guard<std::mutex> owner(mAccess);
+
+        commonAddress = mId;
+        CS101_AppLayerParameters pParams = CS104_Slave_getAppLayerParameters(mpSlave);
+        if (pParams)
+          serverParameters = *pParams;
+      }
+
+      sCS101_StaticASDU asdu{};
+      CS101_ASDU_initializeStatic(&asdu, &serverParameters, isSequence, reasonCode, originId, commonAddress, isTest, isNegative);
+
+      DataBuffer::const_iterator it = arBegin;
+      CS101_ASDU pAsdu = reinterpret_cast<CS101_ASDU>(&asdu);
+
+      // TODO asdu > buffer size ! -> send and create new asdu
+      for (; it != arEnd; ++it)
+      {
+        CS101_ASDU_addInformationObject(pAsdu, it->Get());
+      }
+      CS104_Slave_enqueueASDU(mpSlave, pAsdu);
+    }
+
+
+    DataMap::const_iterator FindData(const DataMap& arSearched, const DataSettings& arId) const
+    {
+      DataMap::const_iterator it = arSearched.cbegin();
+      for (; it != arSearched.cend(); ++it)
+      {
+        if (it->first == arId)
+          return it;
+      }
+      return arSearched.cend();
+    }
+
+    DataMap::iterator FindData(DataMap& arSearched, const DataSettings& arId)
+    {
+      DataMap::iterator it = arSearched.begin();
+      for (; it != arSearched.end(); ++it)
+      {
+        if (it->first == arId)
+          return it;
+      }
+      return arSearched.end();
+    }
+
+    void AssertUniqueId(const DataSettings& arId) const
+    {
+      if ((FindData(mStatusData, arId) != mStatusData.cend()) ||
+          (FindData(mControlData, arId) != mControlData.cend()))
       {
         throw std::invalid_argument("Cannot handle registration request. Data with the same id is registered already.");
       }
@@ -154,6 +322,29 @@ namespace IEC104
     }
 
   private: // Private functions with own locks
+
+    void DoCycle() const
+    {
+      static std::vector<SpBaseInformation> sendBuffer;
+      sendBuffer.clear();
+
+      if (GetActiveConnections() == 0) // Periodic data is sent after STARTDT only
+        return;
+
+      { // Critical section
+        const std::lock_guard<std::mutex> owner(mAccess);
+
+
+        for (const auto& entry : mStatusData)
+        {
+          if (entry.first.IsCycleData())
+            sendBuffer.push_back(entry.second->Write());
+        }
+      }
+
+      sendBuffer.shrink_to_fit();
+      SendAll(sendBuffer);
+    }
          
     void RegisterInternal(const TC::BasePropertyList& arDefinition, DataMap& arDestination)
     {
@@ -164,12 +355,12 @@ namespace IEC104
       if (!spNewData)
         throw std::runtime_error("Failed to create new data point.");
 
-      const std::string dataId = spNewData->GetId();
+      const DataSettings dataId(spNewData->GetId());
 
       {
         const std::lock_guard<std::mutex> owner(mAccess);
         AssertUniqueId(dataId);
-        arDestination.insert(std::make_pair(dataId, std::move(spNewData)));
+        arDestination.push_back(std::make_pair(dataId, std::move(spNewData)));
       }
     }
 
@@ -180,19 +371,55 @@ namespace IEC104
 
     void OnConnectEvent(IMasterConnection apConnection, CS104_PeerConnectionEvent aEvent) noexcept
     {
+      static constexpr size_t bufferSize = 64;
+      char ipString[bufferSize + 1] = "";
+      IMasterConnection_getPeerAddress(apConnection, ipString, bufferSize);
+
       const std::lock_guard<std::mutex> owner(mAccess);
+
+      if (aEvent == CS104_CON_EVENT_CONNECTION_OPENED)
+      {
+        mConnections.insert(std::make_pair(apConnection, ConnectionStatus(std::string(ipString))));
+        return;
+      }
+
+      ConnectionMap::iterator itTarget = mConnections.find(apConnection);
+      if (itTarget == mConnections.end())
+        return;
 
       switch(aEvent)
       {
-        case CS104_CON_EVENT_CONNECTION_OPENED:
         case CS104_CON_EVENT_CONNECTION_CLOSED:
+          mConnections.erase(itTarget);
+          break;
         case CS104_CON_EVENT_ACTIVATED:
+          itTarget->second.Activate();
+          break;
         case CS104_CON_EVENT_DEACTIVATED:
+          itTarget->second.Deactivate();
+          break;
+
         default:
           break;
       }
+    }
 
-      // TODO
+    size_t GetActiveConnections() const
+    {
+      const std::lock_guard<std::mutex> owner(mAccess);
+      size_t result = 0;
+      for(const auto& connection : mConnections)
+      {
+        if (connection.second.IsActive())
+          ++result;
+      }
+      return result;
+    }
+
+    size_t GetOpenConnections() const
+    {
+      const std::lock_guard<std::mutex> owner(mAccess);
+      return mConnections.size();
     }
 
     bool OnInterrogation(IMasterConnection apConnection, CS101_ASDU apAsdu, uint8_t aQoi) noexcept
@@ -264,9 +491,13 @@ namespace IEC104
   private:
     CS104_Slave mpSlave;
     uint16_t mId;
+    size_t mCycleMs;
     DataMap mStatusData;
     DataMap mControlData;
+    ConnectionMap mConnections;
 
+
+    std::unique_ptr<std::thread> mpLoopThread;
     mutable std::mutex mAccess;
   };
 

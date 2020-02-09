@@ -26,5 +26,7 @@ namespace IEC104
     virtual const bool HasDefaultProperty(const std::string& arKey) const override;
     virtual const std::string& GetDefaultProperty(const std::string arKey) const override;
   };
+
+
 }
 #endif

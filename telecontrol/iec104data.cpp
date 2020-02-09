@@ -18,8 +18,8 @@ namespace IEC104
     SpDataPtr pNew = nullptr;
     switch (typeId.GetValue())
     {
-    case M_DP_NA_1:
       // TODO
+    case M_DP_NA_1:
       return SpDataPtr(new IEC104::DoublePointStatus(dataId));
     case M_DP_TB_1:
       return SpDataPtr(new IEC104::DoublePointStatusTime(dataId));

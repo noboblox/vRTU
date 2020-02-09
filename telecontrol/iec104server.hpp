@@ -34,6 +34,12 @@ namespace IEC104
 
     virtual void UpdateStatusData(const std::string& arId, const TC::BaseDataPropertyList& arUpdate);
 
+    // TODO virtual void CoupleData(const std::string& arStatusDataId, const std::string& arControlDataId); // Todo functor: Decide what happens with the state on command
+    // TODO virtual void DecoupleData(const std::string& arAnyDataId); // stub
+
+    // TODO virtual void AcceptCommand(); // stub
+    // TODO virtual void RefuseCommand(); // stub
+
   private:
     Iec104ServerImpl* mpImpl;
   };
