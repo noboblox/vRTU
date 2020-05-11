@@ -28,7 +28,7 @@ namespace IEC104
 {
   class Iec104ServerImpl
   {
-  public:
+  public: // public functions need to be always thread safe
     static constexpr size_t msDefaultQueueSize = 1024;
 
     using DataBuffer = std::vector<SpBaseInformation>;
@@ -81,71 +81,111 @@ namespace IEC104
     using DataMap = std::vector<std::pair<DataSettings, SpDataPtr>>;
 
     Iec104ServerImpl(const Iec104ServerParameter& arSettings)
-      : mpSlave(CS104_Slave_create(msDefaultQueueSize, msDefaultQueueSize)),
-        mId(arSettings.mId),
-        mCycleMs(arSettings.mCycle),
-        mStatusData(),
-        mControlData(),
-        mConnections()
+      : mpSlave(nullptr),
+        mId(arSettings.mId), mSendCycle(arSettings.mCycle),
+        mIpAddress(arSettings.mIpAddress), mPort(arSettings.mPort),
+        mSignalStop(false)
     {
 
       if (!CheckPreconditions(arSettings))
         throw std::invalid_argument("Unsupported arguments provided");
+      InitCleanSlaveObject(mIpAddress, mPort);
+    }
 
-      const std::string ipString = arSettings.mIpAddress.to_string();
-      CS104_Slave_setLocalAddress(mpSlave, ipString.c_str());
-      CS104_Slave_setLocalPort(mpSlave, arSettings.mPort);
+    void InitCleanSlaveObject(const boost::asio::ip::address& arIp, uint16_t aPort)
+    {
+      if (mpSlave)
+      {
+        CS104_Slave_destroy(mpSlave);
+        mpSlave = nullptr;
+      }
+
+      const std::string ip_string = arIp.to_string();
+      mpSlave = CS104_Slave_create(msDefaultQueueSize, msDefaultQueueSize);
+      CS104_Slave_setLocalAddress(mpSlave, ip_string.c_str());
+      CS104_Slave_setLocalPort(mpSlave, aPort);
       SetupHandlers();
     }
 
     virtual ~Iec104ServerImpl()
     {
       StopServer();
-      CS104_Slave_destroy(mpSlave);
+      if (mpSlave)
+        CS104_Slave_destroy(mpSlave);
     }
 
     void StopServer()
     {
+      // requests child threads to finish
       {
         const std::lock_guard<std::mutex> owner(mAccess);
-        if (mpSlave && CS104_Slave_isRunning(mpSlave))
-          CS104_Slave_stop(mpSlave);
+        mSignalStop = true;
       }
 
-      if (mpLoopThread && mpLoopThread->joinable())
-        mpLoopThread->join();
-      mpLoopThread.reset(nullptr);
+      // wait for childs to finish
+      for (auto& thread : mChildThreads)
+      {
+        if (thread.joinable())
+          thread.join();
+      }
+      mChildThreads.clear();
+
+      // revert private data to initial state
+      {
+        const std::lock_guard<std::mutex> owner(mAccess);
+        mSignalStop = false;
+        InitCleanSlaveObject(mIpAddress, mPort);
+      }
     }
 
     void StartServer()
     {
       const std::lock_guard<std::mutex> owner(mAccess);
-      CS104_Slave_start(mpSlave);
-      if (mCycleMs != 0)
-        mpLoopThread.reset(new std::thread(&Iec104ServerImpl::ServerLoop, this));
+
+      if (CS104_Slave_isRunning(mpSlave))
+        return;
+
+      CS104_Slave_startThreadless(mpSlave);
+
+      if (!CS104_Slave_isRunning(mpSlave))
+        throw std::runtime_error("Unable to start server on requested local interface (Socket in use?).");
+
+      const std::chrono::milliseconds RECEIVE_CYCLE = std::chrono::milliseconds(10);
+      mChildThreads.emplace_back(std::thread(&Iec104ServerImpl::ServerLoop, this, RECEIVE_CYCLE, &Iec104ServerImpl::HandleIncomingRequests));
+
+      const std::chrono::milliseconds SEND_CYCLE = (mSendCycle != std::chrono::milliseconds(0)) ? mSendCycle : std::chrono::milliseconds(2000);
+      mChildThreads.emplace_back(std::thread(&Iec104ServerImpl::ServerLoop, this, SEND_CYCLE, &Iec104ServerImpl::DoSendCycle));
     }
 
-    void ServerLoop() const
+    bool IsStopRequested() const
     {
-      while (true)
-      {
-        {
-          const std::lock_guard<std::mutex> owner(mAccess);
-          if (!CS104_Slave_isRunning(mpSlave))
-            return;
-        }
+      const std::lock_guard<std::mutex> owner(mAccess);
+      return mSignalStop;
+    }
 
+    void ServerLoop(const std::chrono::microseconds aCycle, std::function<void(Iec104ServerImpl&)> arCallee)
+    {
+      while (!IsStopRequested())
+      {
         try
         {
-          DoCycle();
+          arCallee(*this);
         }
-        catch (...) {std::cerr << "Critical error. Exception in server cycle for server " << mId << std::endl;}
-        std::this_thread::sleep_for(std::chrono::milliseconds(mCycleMs));
+        catch (std::exception& e)
+        {
+          std::cerr << "Critical error in server loop (Server = " << mId << ") - " << e.what() << std::endl;
+        }
+        catch (...)
+        {
+          std::cerr << "Critical error. Unkown exception in server loop" << mId << std::endl;
+        }
+        std::this_thread::sleep_for(aCycle);
       }
     }
 
+
     void
-      RegisterStatusData(const TC::BasePropertyList& arDefinition)
+    RegisterStatusData(const TC::BasePropertyList& arDefinition)
     {
       RegisterInternal(arDefinition, mStatusData);
     }
@@ -156,7 +196,8 @@ namespace IEC104
       RegisterInternal(arDefinition, mControlData);
     }
 
-    void UnregisterData(const std::string& arId)
+    void
+    UnregisterData(const std::string& arId)
     {
       const std::lock_guard<std::mutex> owner(mAccess);
 
@@ -321,10 +362,17 @@ namespace IEC104
       return true;
     }
 
-  private: // Private functions with own locks
+  private: // Private functions that do lock
 
-    void DoCycle() const
+    void HandleIncomingRequests()
     {
+      const std::lock_guard<std::mutex> owner(mAccess);
+      CS104_Slave_tick(mpSlave);
+    }
+
+    void DoSendCycle() const
+    {
+
       static std::vector<SpBaseInformation> sendBuffer;
       sendBuffer.clear();
 
@@ -424,8 +472,6 @@ namespace IEC104
 
     bool OnInterrogation(IMasterConnection apConnection, CS101_ASDU apAsdu, uint8_t aQoi) noexcept
     {
-      const std::lock_guard<std::mutex> owner(mAccess);
-
       if (!ProcessServerId(apConnection, apAsdu))
         return true;
 
@@ -434,8 +480,6 @@ namespace IEC104
 
     bool OnCounterInterrogation(IMasterConnection apConnection, CS101_ASDU apAsdu, QualifierOfCIC aQcc) noexcept
     {
-      const std::lock_guard<std::mutex> owner(mAccess);
-
       if (!ProcessServerId(apConnection, apAsdu))
         return true;
 
@@ -444,8 +488,6 @@ namespace IEC104
 
     bool OnDefaultAsduEvent(IMasterConnection apConnection, CS101_ASDU apAsdu) noexcept
     {
-      const std::lock_guard<std::mutex> owner(mAccess);
-
       if (!ProcessServerId(apConnection, apAsdu))
         return true;
 
@@ -491,14 +533,17 @@ namespace IEC104
   private:
     CS104_Slave mpSlave;
     uint16_t mId;
-    size_t mCycleMs;
+    std::chrono::milliseconds mSendCycle;
+    boost::asio::ip::address mIpAddress;
+    uint16_t mPort;
+    bool mSignalStop;
+
     DataMap mStatusData;
     DataMap mControlData;
     ConnectionMap mConnections;
+    std::vector<std::thread> mChildThreads;
 
-
-    std::unique_ptr<std::thread> mpLoopThread;
-    mutable std::mutex mAccess;
+    mutable std::mutex mAccess; //!< Thread safe access to member data
   };
 
 

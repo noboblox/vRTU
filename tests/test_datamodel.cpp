@@ -7,7 +7,6 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include <atomic>
 #include <iostream>
 #include <chrono>
 #include <thread>
@@ -46,8 +45,7 @@ BOOST_AUTO_TEST_CASE(ShallSucceedWatchdogTimeout)
 BOOST_AUTO_TEST_CASE(ShallSucceedWatchdogStartStop)
 {
   std::cout << "Test watchdog Start/Stop: " << std::endl;
-  std::atomic<bool> hasTimedOut(false);
-  UTIL::WatchDog watchdog(std::chrono::milliseconds(100), [&hasTimedOut](){hasTimedOut = true;});
+  UTIL::WatchDog watchdog(std::chrono::milliseconds(100), [](){BOOST_FAIL("Unexpected timeout");});
 
   watchdog.Start();
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -55,24 +53,11 @@ BOOST_AUTO_TEST_CASE(ShallSucceedWatchdogStartStop)
 
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
-  if (hasTimedOut)
-  {
-    BOOST_FAIL("Unexpected timeout");
-  }
-  std::cout << "Single Start/Stop successful " << std::endl
-            << "Test Start() thread safety" << std::endl;
-
   watchdog.Start();
   watchdog.Start(); // reset
   watchdog.Start(); // reset
   watchdog.Start(); // reset
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
   watchdog.Stop();
-
-  if (hasTimedOut)
-  {
-    BOOST_FAIL("Unexpected timeout");
-  }
-  std::cout << "Test successful" << std::endl;
 
 }

@@ -26,25 +26,37 @@ namespace UTIL
   {
     if (mpTimer && mpTimer->joinable())
     {
-      mKill = true;
+      SetKillSignal(true);
       mpTimer->join();
-      mKill = false;
+      SetKillSignal(false);
     }
+  }
+
+  void WatchDog::SetKillSignal(bool aValue)
+  {
+    std::lock_guard<std::mutex> owner(mAccess);
+    mSignalKill = aValue;
+  }
+
+  bool WatchDog::IsKillRequested() const
+  {
+    std::lock_guard<std::mutex> owner(mAccess);
+    return mSignalKill;
   }
 
   void WatchDog::DoWatch()
   {
     const std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
     std::chrono::system_clock::time_point now = start;
-    std::chrono::milliseconds elapsedMs(0);
+    std::chrono::milliseconds elapsed_ms(0);
 
-    while(elapsedMs < mTimeout)
+    while(elapsed_ms < mTimeout)
     {
-        if (mKill)
+        if (IsKillRequested())
           return;
 
         now = std::chrono::system_clock::now();
-        elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(now - start);
+        elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - start);
         std::this_thread::sleep_for(mTick);
 
     }

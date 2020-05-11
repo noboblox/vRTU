@@ -8,7 +8,7 @@
 #ifndef WATCHDOG_HPP_
 #define WATCHDOG_HPP_
 
-#include <atomic>
+#include <mutex>
 #include <chrono>
 #include <functional>
 #include <memory>
@@ -26,7 +26,7 @@ namespace UTIL
       mTimeout(std::chrono::duration_cast<std::chrono::milliseconds>(arTimeout)),
       mTick(std::chrono::milliseconds(50)),
       mpTimer(nullptr),
-      mKill(false) {}
+      mSignalKill(false) {}
 
     virtual ~WatchDog();
 
@@ -40,6 +40,11 @@ namespace UTIL
 
   private:
     void DoWatch();
+    /// Thread safe write access to kill signal
+    void SetKillSignal(bool aValue);
+    /// Thread safe read access to kill signal
+    bool IsKillRequested() const;
+
     std::function<void()> SignalTimeout; //!< Called if the watchdog is not stopped in time
 
     std::chrono::milliseconds mTimeout;
@@ -47,7 +52,8 @@ namespace UTIL
 
     // thread management
     std::unique_ptr<std::thread> mpTimer;
-    std::atomic<bool> mKill;
+    bool mSignalKill;
+    mutable std::mutex mAccess;
   };
 
 } /* namespace UTIL */

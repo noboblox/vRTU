@@ -17,93 +17,12 @@
 #include "enumtype.hpp"
 #include "iec104quality.hpp"
 #include "iec104timestamp.hpp"
-#include "mock_testclient.hpp"
 
 BOOST_AUTO_TEST_CASE(ShallSucceedConstructServer)
 {
   BOOST_CHECK_NO_THROW(IEC104::Iec104Server(IEC104::Iec104ServerParameter::LocalDefaultServer(1)));
 }
 
-BOOST_AUTO_TEST_CASE(ShallSucceedBasicConnect)
-{
-  InitClient();
-  IEC104::Iec104Server server(IEC104::Iec104ServerParameter::LocalDefaultServer(1));
-  server.StartServer();
-  BOOST_CHECK_EQUAL(gpTestClient->Connect(), true);
-  KillClient();
-
-  // New connect shall still succeed
-  InitClient();
-  BOOST_CHECK_EQUAL(gpTestClient->Connect(), true);
-}
-
-BOOST_AUTO_TEST_CASE(ShallSucceedServerCycle)
-{
-  InitClient();
-  IEC104::Iec104Server server(IEC104::Iec104ServerParameter::LocalDefaultServer(1));
-
-
-  server.RegisterStatusData(IEC104::Iec104DataDefinition(IEC104::TypeIdEnum(M_DP_TB_1), 1000));
-  server.RegisterStatusData(IEC104::Iec104DataDefinition(IEC104::TypeIdEnum(M_DP_TB_1), 1001));
-  server.RegisterStatusData(IEC104::Iec104DataDefinition(IEC104::TypeIdEnum(M_DP_TB_1), 1002));
-  server.RegisterStatusData(IEC104::Iec104DataDefinition(IEC104::TypeIdEnum(M_DP_TB_1), 1003));
-
-  server.RegisterStatusData(IEC104::Iec104DataDefinition(IEC104::TypeIdEnum(M_SP_TB_1), 990));
-
-  server.RegisterStatusData(IEC104::Iec104DataDefinition(IEC104::TypeIdEnum(M_ME_TF_1), 99998));
-  server.RegisterStatusData(IEC104::Iec104DataDefinition(IEC104::TypeIdEnum(M_ME_TF_1), 99086));
-  server.RegisterStatusData(IEC104::Iec104DataDefinition(IEC104::TypeIdEnum(M_ME_TF_1), 49843));
-
-  server.StartServer();
-  BOOST_CHECK_EQUAL(gpTestClient->Connect(), true);
-  gpTestClient->StartMonitoring();
-
-
-  std::vector<IEC104::SpBaseInformation> cycleData;
-  while (cycleData.size() < 8)
-  {
-    gpTestClient->ReadBuffer(cycleData);
-    std::this_thread::sleep_for(std::chrono::milliseconds(50)); // wait for the server to send a cycle
-  }
-
-  size_t sp = 0, dp = 0, me = 0;
-  std::set<int> ids;
-
-  for (const auto& element : cycleData)
-  {
-    ids.insert(InformationObject_getObjectAddress(element.Get()));
-
-    switch (InformationObject_getType(element.Get()))
-    {
-    case M_DP_TB_1:
-      ++dp;
-      break;
-    case M_SP_TB_1:
-      ++sp;
-      break;
-    case M_ME_TF_1:
-      ++me;
-      break;
-    default:
-      break;
-    }
-  }
-
-  BOOST_CHECK_EQUAL(sp, 1);
-  BOOST_CHECK_EQUAL(dp, 4);
-  BOOST_CHECK_EQUAL(me, 3);
-
-  BOOST_CHECK_NE(ids.find(1000)  == ids.cend(), false);
-  BOOST_CHECK_NE(ids.find(1001)  == ids.cend(), false);
-  BOOST_CHECK_NE(ids.find(1002)  == ids.cend(), false);
-  BOOST_CHECK_NE(ids.find(1003)  == ids.cend(), false);
-  BOOST_CHECK_NE(ids.find(990)   == ids.cend(), false);
-  BOOST_CHECK_NE(ids.find(99998) == ids.cend(), false);
-  BOOST_CHECK_NE(ids.find(99086) == ids.cend(), false);
-  BOOST_CHECK_NE(ids.find(49843) == ids.cend(), false);
-
-  KillClient();
-}
 
 BOOST_AUTO_TEST_CASE(ShallSucceedCreate104DatapointDefinition)
 {
@@ -137,7 +56,7 @@ UTIL::Enum<Test>::EnumDefinition const UTIL::Enum<Test>::msDefinition
 };
 
   BOOST_AUTO_TEST_CASE(ShallSucceedCheckEnumType)
-{  
+{
   // See enum definition above
   UTIL::Enum<Test> testValue("ONE");
   BOOST_CHECK_EQUAL(testValue.GetValue(), ONE);
@@ -161,7 +80,7 @@ UTIL::Enum<Test>::EnumDefinition const UTIL::Enum<Test>::msDefinition
   BOOST_CHECK_EQUAL(testValue >= compare, true);
   BOOST_CHECK_EQUAL(testValue <  compare, false);
   BOOST_CHECK_EQUAL(testValue >  compare, false);
-  
+
   compare = "THREE";
   BOOST_CHECK_EQUAL(testValue == compare, false);
   BOOST_CHECK_EQUAL(testValue != compare, true);
@@ -191,7 +110,7 @@ UTIL::Enum<Test>::EnumDefinition const UTIL::Enum<Test>::msDefinition
     IEC104::Iec104DataDefinition stateDef(stateType, dataId1);
     IEC104::Iec104DataDefinition controlDef(controlType, dataId2);
     IEC104::Iec104Server server(IEC104::Iec104ServerParameter::LocalDefaultServer(serverId));
-    
+
     BOOST_CHECK_NO_THROW(server.RegisterStatusData(stateDef));
     BOOST_CHECK_NO_THROW(server.RegisterControlData(controlDef));
 
@@ -201,9 +120,25 @@ UTIL::Enum<Test>::EnumDefinition const UTIL::Enum<Test>::msDefinition
 
     BOOST_CHECK_NO_THROW(server.UnregisterData(stateDef.GetString(IEC104::Iec104DataDefinition::csDataId)));
     BOOST_CHECK_NO_THROW(server.UnregisterData(controlDef.GetString(IEC104::Iec104DataDefinition::csDataId)));
-      
+
     BOOST_CHECK_EQUAL(server.CountStatusData(), 0);
     BOOST_CHECK_EQUAL(server.CountControlData(), 0);
+  }
+
+  BOOST_AUTO_TEST_CASE(ShallSucceedStartStopServer)
+  {
+    IEC104::Iec104Server server(IEC104::Iec104ServerParameter::LocalDefaultServer(1234));
+    BOOST_CHECK_NO_THROW(server.StartServer()); // localhost:2404
+
+    IEC104::Iec104Server conflicing_server(IEC104::Iec104ServerParameter::LocalDefaultServer(3456));
+    BOOST_CHECK_THROW(conflicing_server.StartServer(), std::runtime_error); // localhost:2404 is occupied
+
+    BOOST_CHECK_NO_THROW(server.StartServer()); // Should do nothing
+    BOOST_CHECK_NO_THROW(server.StopServer());
+
+    // Restart
+    BOOST_CHECK_NO_THROW(server.StartServer());
+    BOOST_CHECK_NO_THROW(server.StopServer());
   }
 
   BOOST_AUTO_TEST_CASE(SpInfoObjectPointerShallPreventMemoryLeaks)
@@ -255,25 +190,25 @@ UTIL::Enum<Test>::EnumDefinition const UTIL::Enum<Test>::msDefinition
 
     testQuality.EditFlagBlocked(true);
     BOOST_CHECK_EQUAL(testQuality.GetInt(), IEC60870_QUALITY_BLOCKED);
-    
+
     testQuality.EditFlagTimeout(true);
     BOOST_CHECK_EQUAL(testQuality.GetInt(), IEC60870_QUALITY_BLOCKED | IEC60870_QUALITY_ELAPSED_TIME_INVALID);
-    
+
     testQuality.EditFlagInvalid(true);
     BOOST_CHECK_EQUAL(testQuality.GetInt(), IEC60870_QUALITY_BLOCKED | IEC60870_QUALITY_ELAPSED_TIME_INVALID | IEC60870_QUALITY_INVALID);
-    
+
     testQuality.EditFlagNonTopical(true);
     BOOST_CHECK_EQUAL(testQuality.GetInt(), IEC60870_QUALITY_BLOCKED | IEC60870_QUALITY_ELAPSED_TIME_INVALID | IEC60870_QUALITY_INVALID |
                                             IEC60870_QUALITY_NON_TOPICAL);
-    
+
     testQuality.EditFlagOverflow(true);
     BOOST_CHECK_EQUAL(testQuality.GetInt(), IEC60870_QUALITY_BLOCKED | IEC60870_QUALITY_ELAPSED_TIME_INVALID | IEC60870_QUALITY_INVALID |
                                             IEC60870_QUALITY_NON_TOPICAL | IEC60870_QUALITY_OVERFLOW);
-    
+
     testQuality.EditFlagReserved(true);
     BOOST_CHECK_EQUAL(testQuality.GetInt(), IEC60870_QUALITY_BLOCKED | IEC60870_QUALITY_ELAPSED_TIME_INVALID | IEC60870_QUALITY_INVALID |
                                             IEC60870_QUALITY_NON_TOPICAL | IEC60870_QUALITY_OVERFLOW | IEC60870_QUALITY_RESERVED);
-    
+
     testQuality.EditFlagSubstituted(true);
     BOOST_CHECK_EQUAL(testQuality.GetInt(), IEC60870_QUALITY_BLOCKED | IEC60870_QUALITY_ELAPSED_TIME_INVALID | IEC60870_QUALITY_INVALID |
                                             IEC60870_QUALITY_NON_TOPICAL | IEC60870_QUALITY_OVERFLOW | IEC60870_QUALITY_RESERVED |

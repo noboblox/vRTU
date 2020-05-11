@@ -365,3 +365,4 @@ MigrationBackup/
 *.vcxproj
 Testing/Temporary/CTestCostData.txt
 *.prefs
+tests/Testing/Temporary/CTestCostData.txt
