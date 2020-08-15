@@ -2,7 +2,7 @@ cmake_minimum_required( VERSION 3.11 )
 
 project( vrtu )
     
-set( CMAKE_CXX_STANDARD 11 )
+set( CMAKE_CXX_STANDARD 14 )
 
 enable_testing()
 
@@ -16,6 +16,16 @@ add_library( vrtu STATIC
              telecontrol/iec104quality.cpp
              telecontrol/iec104timestamp.cpp
            )
+
+add_executable( rtuapp
+                app/startarg.cpp
+                app/rtuapp.cpp
+              )
+
+target_link_libraries( rtuapp
+                       PRIVATE Boost::boost
+                       PRIVATE Boost::system
+                     )
 
 target_include_directories( vrtu PUBLIC
                             datamodel
