@@ -11,6 +11,9 @@
 #include <cstdint>
 #include <iosfwd>
 
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/ip/tcp.hpp>
+
 #include "startarg.hpp"
 
 namespace VRTU
@@ -30,7 +33,13 @@ namespace VRTU
     RTUApp& operator=(RTUApp&& arOther) = delete;
 
   private:
+    void RunListener();
+    void StartAccept();
+
+  private:
     StartArgParser mArgParser;
+    boost::asio::io_context mContext;
+    boost::asio::ip::tcp::acceptor mAcceptor;
     bool mFlagHelp;
     uint16_t mPort;
     std::string mIP;

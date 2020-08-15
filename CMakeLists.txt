@@ -25,6 +25,7 @@ add_executable( rtuapp
 target_link_libraries( rtuapp
                        PRIVATE Boost::boost
                        PRIVATE Boost::system
+                       PRIVATE pthread
                      )
 
 target_include_directories( vrtu PUBLIC

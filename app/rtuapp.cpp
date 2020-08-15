@@ -24,7 +24,7 @@ main(int argc, char* argv[])
 
     return 0;
   }
-  catch (std::exception& e) {std::cout << "Unhandled expception:" << e.what() << " - Shutdown app." << std::endl;}
+  catch (std::exception& e) {std::cout << "Unhandled exception:" << e.what() << " - Shutdown app." << std::endl;}
   catch (...) {std::cout << "Unhandled exception: <unknown> - Shutdown app." << std::endl;}
 
   return -1;
@@ -33,7 +33,7 @@ main(int argc, char* argv[])
 namespace VRTU
 {
   RTUApp::RTUApp(int argc, char* argv[])
-    : mArgParser(),
+    : mArgParser(), mContext(), mAcceptor(mContext),
       mFlagHelp(false), mPort(26000), mIP("::1")
   {
     mArgParser.Register(std::make_unique<FlagArg>
@@ -55,6 +55,60 @@ namespace VRTU
   }
 
   void
+  RTUApp::RunListener()
+  {
+    std::cout << "Try to startup server listener on " << mIP << ":" << mPort << " ..." << std::endl;
+
+    boost::asio::ip::tcp::resolver resolver(mContext);
+    boost::asio::ip::tcp::endpoint endpoint = *resolver.resolve(mIP, std::to_string(mPort)).begin();
+
+    mAcceptor.open(endpoint.protocol());
+    mAcceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
+    mAcceptor.bind(endpoint);
+    mAcceptor.listen();
+
+    std::cout << "... Done." << std::endl;
+
+    StartAccept();
+    mContext.run(); // Start handling async calls
+  }
+
+  void
+  RTUApp::StartAccept()
+  {
+    std::cout << "Waiting for a new connect request ..." << std::endl;
+
+    mAcceptor.async_accept(
+        [this](boost::system::error_code aError, boost::asio::ip::tcp::socket&& arrSocket)
+        {
+          if (!mAcceptor.is_open())
+            return;
+
+          try
+          {
+            boost::asio::ip::tcp::endpoint client = arrSocket.remote_endpoint();
+
+            if (!aError)
+            {
+              std::cout << "... Accept new connection from remote host " << client.address() << ":" << client.port() << "." << std::endl;
+              std::cout << "TODO" << std::endl;
+              // TODO: Accept a new connection
+            }
+            else
+            {
+              std::cout << "... Reject connection from remote host " << client.address() << ":" << client.port()
+                        << " (Errorcode: " << aError << ")." << std::endl;
+            }
+          }
+          catch (boost::system::system_error& e) {e.what();}
+
+
+
+          StartAccept(); // Wait for the next connection
+        });
+  }
+
+  void
   RTUApp::Run()
   {
     if (mFlagHelp)
@@ -63,7 +117,7 @@ namespace VRTU
       return;
     }
 
-    std::cout << "TODO..." << std::endl;
+    RunListener();
   }
 
   void
