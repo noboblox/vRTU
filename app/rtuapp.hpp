@@ -10,6 +10,8 @@
 
 #include <cstdint>
 #include <iosfwd>
+#include <memory>
+#include <set>
 
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
@@ -18,9 +20,13 @@
 
 namespace VRTU
 {
+  class HttpConnection;
+
   class RTUApp
   {
   public:
+    using ConnectionPtr = std::unique_ptr<HttpConnection>;
+
     RTUApp(int argc, char* argv[]);
     ~RTUApp() noexcept;
 
@@ -35,14 +41,17 @@ namespace VRTU
   private:
     void RunListener();
     void StartAccept();
+    void PrepareConnectionDestroy(HttpConnection& arConnection);
 
   private:
     StartArgParser mArgParser;
     boost::asio::io_context mContext;
     boost::asio::ip::tcp::acceptor mAcceptor;
+    std::set<ConnectionPtr> mConnections;
     bool mFlagHelp;
     uint16_t mPort;
     std::string mIP;
+
   };
 
 } /* namespace VRTU */

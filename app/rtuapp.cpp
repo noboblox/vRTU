@@ -12,7 +12,9 @@
 #include <iostream>
 #include <stdexcept>
 
+#include "httpconnection.hpp"
 #include "startarg.hpp"
+
 
 int
 main(int argc, char* argv[])
@@ -24,8 +26,8 @@ main(int argc, char* argv[])
 
     return 0;
   }
-  catch (std::exception& e) {std::cout << "Unhandled exception:" << e.what() << " - Shutdown app." << std::endl;}
-  catch (...) {std::cout << "Unhandled exception: <unknown> - Shutdown app." << std::endl;}
+  catch (std::exception& e) {std::cout << "Fatal error: " << e.what() << " - Shutdown app." << std::endl;}
+  catch (...) {std::cout << "Unknown error - Shutdown app." << std::endl;}
 
   return -1;
 }
@@ -33,8 +35,8 @@ main(int argc, char* argv[])
 namespace VRTU
 {
   RTUApp::RTUApp(int argc, char* argv[])
-    : mArgParser(), mContext(), mAcceptor(mContext),
-      mFlagHelp(false), mPort(26000), mIP("::1")
+    : mArgParser(), mContext(), mAcceptor(mContext), mConnections(),
+      mFlagHelp(false), mPort(26000), mIP("127.0.0.1")
   {
     mArgParser.Register(std::make_unique<FlagArg>
                          ("-h", "--help", mFlagHelp, StartArg::OPTIONAL,
@@ -74,6 +76,30 @@ namespace VRTU
   }
 
   void
+  RTUApp::PrepareConnectionDestroy(HttpConnection& arConnection)
+  {
+    /*
+     * Post the destroy function object for later execution to the io context.
+     *
+     * The handler is called by the connection to be destroyed.
+     * So the delete has to be done after this handler returns
+     */
+    boost::asio::post(mContext, [this, &arConnection]()
+    {
+      auto it = mConnections.begin();
+
+      for (; it != mConnections.end(); ++it)
+      {
+        if ((*it).get() == &arConnection)
+        {
+          mConnections.erase(it);
+          return;
+        }
+      }
+    });
+  }
+
+  void
   RTUApp::StartAccept()
   {
     std::cout << "Waiting for a new connect request ..." << std::endl;
@@ -91,8 +117,17 @@ namespace VRTU
             if (!aError)
             {
               std::cout << "... Accept new connection from remote host " << client.address() << ":" << client.port() << "." << std::endl;
-              std::cout << "TODO" << std::endl;
-              // TODO: Accept a new connection
+
+              auto p_connection = std::make_unique<HttpConnection>(std::move(arrSocket),
+                std::bind(&RTUApp::PrepareConnectionDestroy, this, std::placeholders::_1));
+
+              p_connection->StartRead([this](TC::REST::BaseRequest&&) -> bool
+                {
+                  std::cout << "TODO" << std::endl;
+                  return false;
+                });
+
+              mConnections.insert(std::move(p_connection));
             }
             else
             {
@@ -101,8 +136,6 @@ namespace VRTU
             }
           }
           catch (boost::system::system_error& e) {e.what();}
-
-
 
           StartAccept(); // Wait for the next connection
         });

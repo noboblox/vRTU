@@ -20,6 +20,7 @@ add_library( vrtu STATIC
 add_executable( rtuapp
                 app/startarg.cpp
                 app/rtuapp.cpp
+                app/httpconnection.cpp
               )
 
 target_link_libraries( rtuapp
