@@ -43,12 +43,15 @@ BOOST_AUTO_TEST_CASE(construct_path_valid)
 
 BOOST_AUTO_TEST_CASE(contruct_path_invalid)
 {
-  BOOST_CHECK_THROW(TC::REST::ResourcePath("X"), std::invalid_argument);
-  BOOST_CHECK_THROW(TC::REST::ResourcePath("/a//b/c"), std::invalid_argument);
-  BOOST_CHECK_THROW(TC::REST::ResourcePath("/abc/de%f"), std::invalid_argument);
-  BOOST_CHECK_THROW(TC::REST::ResourcePath("/abc/def%"), std::invalid_argument);
-  BOOST_CHECK_THROW(TC::REST::ResourcePath("/abc/def%00"), std::invalid_argument);
+  BOOST_CHECK_THROW(TC::REST::ResourcePath("X"),             std::invalid_argument);
+  BOOST_CHECK_THROW(TC::REST::ResourcePath("/a//b/c"),       std::invalid_argument);
+  BOOST_CHECK_THROW(TC::REST::ResourcePath("/abc/de%f"),     std::invalid_argument);
+  BOOST_CHECK_THROW(TC::REST::ResourcePath("/abc/def%"),     std::invalid_argument);
+  BOOST_CHECK_THROW(TC::REST::ResourcePath("/abc/def%00"),   std::invalid_argument);
   BOOST_CHECK_THROW(TC::REST::ResourcePath("/abc/def%00/b"), std::invalid_argument);
+  BOOST_CHECK_THROW(TC::REST::ResourcePath("/abc/d ef"),     std::invalid_argument);
+  BOOST_CHECK_THROW(TC::REST::ResourcePath("/abc/d:ef"),     std::invalid_argument);
+  BOOST_CHECK_THROW(TC::REST::ResourcePath("/abc/def\n"),    std::invalid_argument);
 }
 
 BOOST_AUTO_TEST_CASE(path_encoding_valid)
@@ -69,5 +72,32 @@ BOOST_AUTO_TEST_CASE(path_encoding_valid)
 
     path.AddComponent("; ,");
     BOOST_CHECK_EQUAL(path.ToString(), "/abc/a%3Ab%2Fc%3Fd%23e/f%5Bg%5Dh%40i%21/%3B%20%2C");
+  }
+}
+
+BOOST_AUTO_TEST_CASE(path_comparison)
+{
+  {
+    TC::REST::ResourcePath layer1("/abc");
+    TC::REST::ResourcePath layer2("/abc/def"), layer2_clone(layer2);
+    TC::REST::ResourcePath layer2_diff("/abc/d3f");
+    TC::REST::ResourcePath layer3("/abc/def/ghi");
+    TC::REST::ResourcePath layer4("/abc/def/ghi/jkl");
+
+    BOOST_CHECK_EQUAL(layer1.IsParent(layer2), true);
+    BOOST_CHECK_EQUAL(layer1.IsParent(layer3), true);
+    BOOST_CHECK_EQUAL(layer3.IsChild(layer2),  true);
+    BOOST_CHECK_EQUAL(layer3.IsChild(layer1),  true);
+
+    BOOST_CHECK_EQUAL(layer1.IsParent(layer2, TC::REST::ResourcePath::CP_IMMEDIATE), true);
+    BOOST_CHECK_EQUAL(layer1.IsParent(layer3, TC::REST::ResourcePath::CP_IMMEDIATE), false);
+    BOOST_CHECK_EQUAL(layer3.IsChild(layer2,  TC::REST::ResourcePath::CP_IMMEDIATE), true);
+    BOOST_CHECK_EQUAL(layer3.IsChild(layer1,  TC::REST::ResourcePath::CP_IMMEDIATE), false);
+
+    BOOST_CHECK_EQUAL(layer2.IsChild(layer2_clone), false);
+    BOOST_CHECK_EQUAL(layer2.IsParent(layer2_clone), false);
+
+    BOOST_CHECK_EQUAL(layer3.IsChild(layer2_diff), false);
+    BOOST_CHECK_EQUAL(layer2_diff.IsParent(layer4), false);
   }
 }
