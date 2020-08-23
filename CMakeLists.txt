@@ -15,6 +15,7 @@ add_library( vrtu STATIC
              telecontrol/staticenums.cpp
              telecontrol/iec104quality.cpp
              telecontrol/iec104timestamp.cpp
+             telecontrol/http/resourcepath.cpp
            )
 
 add_executable( rtuapp
@@ -32,6 +33,7 @@ target_link_libraries( rtuapp
 target_include_directories( vrtu PUBLIC
                             datamodel
                             telecontrol
+                            telecontrol/http
                             util
                           )
 

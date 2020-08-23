@@ -1,6 +1,7 @@
 add_executable( test_vrtu
                 test_datamodel.cpp
-                test_telecontrol.cpp   )
+                test_telecontrol.cpp
+                test_resourcepath.cpp )
                 
 target_link_libraries( test_vrtu
                        PRIVATE vrtu

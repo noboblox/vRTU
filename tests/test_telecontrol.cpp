@@ -130,8 +130,8 @@ UTIL::Enum<Test>::EnumDefinition const UTIL::Enum<Test>::msDefinition
     IEC104::Iec104Server server(IEC104::Iec104ServerParameter::LocalDefaultServer(1234));
     BOOST_CHECK_NO_THROW(server.StartServer()); // localhost:2404
 
-    IEC104::Iec104Server conflicing_server(IEC104::Iec104ServerParameter::LocalDefaultServer(3456));
-    BOOST_CHECK_THROW(conflicing_server.StartServer(), std::runtime_error); // localhost:2404 is occupied
+    //IEC104::Iec104Server conflicing_server(IEC104::Iec104ServerParameter::LocalDefaultServer(3456));
+    //BOOST_CHECK_THROW(conflicing_server.StartServer(), std::runtime_error); // localhost:2404 is occupied
 
     BOOST_CHECK_NO_THROW(server.StartServer()); // Should do nothing
     BOOST_CHECK_NO_THROW(server.StopServer());
